@@ -1,0 +1,14 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "Test WebViews",
+            "type": "dart",
+            "request": "launch",
+            "args": [
+                "--dart-define-from-file=lib/config/test_config.json"
+            ],
+            "flutterMode": "debug"
+        }
+    ]
+}
