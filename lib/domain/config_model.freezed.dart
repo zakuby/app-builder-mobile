@@ -22,7 +22,7 @@ ConfigModel _$ConfigModelFromJson(
 /// @nodoc
 mixin _$ConfigModel {
 
- String? get appName; String? get appIcon; Styles? get styles; Urls? get urls;
+ String? get appName; String? get appIcon; String? get packageName; String? get version; String? get versionCode; String? get description; String? get platform; String? get buildType; String? get environment; Styles? get styles; Urls? get urls;
 /// Create a copy of ConfigModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -35,16 +35,16 @@ $ConfigModelCopyWith<ConfigModel> get copyWith => _$ConfigModelCopyWithImpl<Conf
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConfigModel&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appIcon, appIcon) || other.appIcon == appIcon)&&(identical(other.styles, styles) || other.styles == styles)&&(identical(other.urls, urls) || other.urls == urls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConfigModel&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appIcon, appIcon) || other.appIcon == appIcon)&&(identical(other.packageName, packageName) || other.packageName == packageName)&&(identical(other.version, version) || other.version == version)&&(identical(other.versionCode, versionCode) || other.versionCode == versionCode)&&(identical(other.description, description) || other.description == description)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.buildType, buildType) || other.buildType == buildType)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.styles, styles) || other.styles == styles)&&(identical(other.urls, urls) || other.urls == urls));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,appName,appIcon,styles,urls);
+int get hashCode => Object.hash(runtimeType,appName,appIcon,packageName,version,versionCode,description,platform,buildType,environment,styles,urls);
 
 @override
 String toString() {
-  return 'ConfigModel(appName: $appName, appIcon: $appIcon, styles: $styles, urls: $urls)';
+  return 'ConfigModel(appName: $appName, appIcon: $appIcon, packageName: $packageName, version: $version, versionCode: $versionCode, description: $description, platform: $platform, buildType: $buildType, environment: $environment, styles: $styles, urls: $urls)';
 }
 
 
@@ -55,7 +55,7 @@ abstract mixin class $ConfigModelCopyWith<$Res>  {
   factory $ConfigModelCopyWith(ConfigModel value, $Res Function(ConfigModel) _then) = _$ConfigModelCopyWithImpl;
 @useResult
 $Res call({
- String? appName, String? appIcon, Styles? styles, Urls? urls
+ String? appName, String? appIcon, String? packageName, String? version, String? versionCode, String? description, String? platform, String? buildType, String? environment, Styles? styles, Urls? urls
 });
 
 
@@ -72,10 +72,17 @@ class _$ConfigModelCopyWithImpl<$Res>
 
 /// Create a copy of ConfigModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? appName = freezed,Object? appIcon = freezed,Object? styles = freezed,Object? urls = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? appName = freezed,Object? appIcon = freezed,Object? packageName = freezed,Object? version = freezed,Object? versionCode = freezed,Object? description = freezed,Object? platform = freezed,Object? buildType = freezed,Object? environment = freezed,Object? styles = freezed,Object? urls = freezed,}) {
   return _then(_self.copyWith(
 appName: freezed == appName ? _self.appName : appName // ignore: cast_nullable_to_non_nullable
 as String?,appIcon: freezed == appIcon ? _self.appIcon : appIcon // ignore: cast_nullable_to_non_nullable
+as String?,packageName: freezed == packageName ? _self.packageName : packageName // ignore: cast_nullable_to_non_nullable
+as String?,version: freezed == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
+as String?,versionCode: freezed == versionCode ? _self.versionCode : versionCode // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,platform: freezed == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
+as String?,buildType: freezed == buildType ? _self.buildType : buildType // ignore: cast_nullable_to_non_nullable
+as String?,environment: freezed == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
 as String?,styles: freezed == styles ? _self.styles : styles // ignore: cast_nullable_to_non_nullable
 as Styles?,urls: freezed == urls ? _self.urls : urls // ignore: cast_nullable_to_non_nullable
 as Urls?,
@@ -187,10 +194,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? appName,  String? appIcon,  Styles? styles,  Urls? urls)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? appName,  String? appIcon,  String? packageName,  String? version,  String? versionCode,  String? description,  String? platform,  String? buildType,  String? environment,  Styles? styles,  Urls? urls)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppConfig() when $default != null:
-return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
+return $default(_that.appName,_that.appIcon,_that.packageName,_that.version,_that.versionCode,_that.description,_that.platform,_that.buildType,_that.environment,_that.styles,_that.urls);case _:
   return orElse();
 
 }
@@ -208,10 +215,10 @@ return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? appName,  String? appIcon,  Styles? styles,  Urls? urls)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? appName,  String? appIcon,  String? packageName,  String? version,  String? versionCode,  String? description,  String? platform,  String? buildType,  String? environment,  Styles? styles,  Urls? urls)  $default,) {final _that = this;
 switch (_that) {
 case _AppConfig():
-return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
+return $default(_that.appName,_that.appIcon,_that.packageName,_that.version,_that.versionCode,_that.description,_that.platform,_that.buildType,_that.environment,_that.styles,_that.urls);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -228,10 +235,10 @@ return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? appName,  String? appIcon,  Styles? styles,  Urls? urls)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? appName,  String? appIcon,  String? packageName,  String? version,  String? versionCode,  String? description,  String? platform,  String? buildType,  String? environment,  Styles? styles,  Urls? urls)?  $default,) {final _that = this;
 switch (_that) {
 case _AppConfig() when $default != null:
-return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
+return $default(_that.appName,_that.appIcon,_that.packageName,_that.version,_that.versionCode,_that.description,_that.platform,_that.buildType,_that.environment,_that.styles,_that.urls);case _:
   return null;
 
 }
@@ -243,11 +250,18 @@ return $default(_that.appName,_that.appIcon,_that.styles,_that.urls);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
 class _AppConfig implements ConfigModel {
-  const _AppConfig({this.appName, this.appIcon, this.styles, this.urls});
+  const _AppConfig({this.appName, this.appIcon, this.packageName, this.version, this.versionCode, this.description, this.platform, this.buildType, this.environment, this.styles, this.urls});
   factory _AppConfig.fromJson(Map<String, dynamic> json) => _$AppConfigFromJson(json);
 
 @override final  String? appName;
 @override final  String? appIcon;
+@override final  String? packageName;
+@override final  String? version;
+@override final  String? versionCode;
+@override final  String? description;
+@override final  String? platform;
+@override final  String? buildType;
+@override final  String? environment;
 @override final  Styles? styles;
 @override final  Urls? urls;
 
@@ -264,16 +278,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appIcon, appIcon) || other.appIcon == appIcon)&&(identical(other.styles, styles) || other.styles == styles)&&(identical(other.urls, urls) || other.urls == urls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppConfig&&(identical(other.appName, appName) || other.appName == appName)&&(identical(other.appIcon, appIcon) || other.appIcon == appIcon)&&(identical(other.packageName, packageName) || other.packageName == packageName)&&(identical(other.version, version) || other.version == version)&&(identical(other.versionCode, versionCode) || other.versionCode == versionCode)&&(identical(other.description, description) || other.description == description)&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.buildType, buildType) || other.buildType == buildType)&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.styles, styles) || other.styles == styles)&&(identical(other.urls, urls) || other.urls == urls));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,appName,appIcon,styles,urls);
+int get hashCode => Object.hash(runtimeType,appName,appIcon,packageName,version,versionCode,description,platform,buildType,environment,styles,urls);
 
 @override
 String toString() {
-  return 'ConfigModel(appName: $appName, appIcon: $appIcon, styles: $styles, urls: $urls)';
+  return 'ConfigModel(appName: $appName, appIcon: $appIcon, packageName: $packageName, version: $version, versionCode: $versionCode, description: $description, platform: $platform, buildType: $buildType, environment: $environment, styles: $styles, urls: $urls)';
 }
 
 
@@ -284,7 +298,7 @@ abstract mixin class _$AppConfigCopyWith<$Res> implements $ConfigModelCopyWith<$
   factory _$AppConfigCopyWith(_AppConfig value, $Res Function(_AppConfig) _then) = __$AppConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String? appName, String? appIcon, Styles? styles, Urls? urls
+ String? appName, String? appIcon, String? packageName, String? version, String? versionCode, String? description, String? platform, String? buildType, String? environment, Styles? styles, Urls? urls
 });
 
 
@@ -301,10 +315,17 @@ class __$AppConfigCopyWithImpl<$Res>
 
 /// Create a copy of ConfigModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? appName = freezed,Object? appIcon = freezed,Object? styles = freezed,Object? urls = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? appName = freezed,Object? appIcon = freezed,Object? packageName = freezed,Object? version = freezed,Object? versionCode = freezed,Object? description = freezed,Object? platform = freezed,Object? buildType = freezed,Object? environment = freezed,Object? styles = freezed,Object? urls = freezed,}) {
   return _then(_AppConfig(
 appName: freezed == appName ? _self.appName : appName // ignore: cast_nullable_to_non_nullable
 as String?,appIcon: freezed == appIcon ? _self.appIcon : appIcon // ignore: cast_nullable_to_non_nullable
+as String?,packageName: freezed == packageName ? _self.packageName : packageName // ignore: cast_nullable_to_non_nullable
+as String?,version: freezed == version ? _self.version : version // ignore: cast_nullable_to_non_nullable
+as String?,versionCode: freezed == versionCode ? _self.versionCode : versionCode // ignore: cast_nullable_to_non_nullable
+as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,platform: freezed == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
+as String?,buildType: freezed == buildType ? _self.buildType : buildType // ignore: cast_nullable_to_non_nullable
+as String?,environment: freezed == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
 as String?,styles: freezed == styles ? _self.styles : styles // ignore: cast_nullable_to_non_nullable
 as Styles?,urls: freezed == urls ? _self.urls : urls // ignore: cast_nullable_to_non_nullable
 as Urls?,

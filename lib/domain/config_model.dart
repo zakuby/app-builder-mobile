@@ -12,6 +12,13 @@ abstract class ConfigModel with _$ConfigModel {
   const factory ConfigModel({
     String? appName,
     String? appIcon,
+    String? packageName,
+    String? version,
+    String? versionCode,
+    String? description,
+    String? platform,
+    String? buildType,
+    String? environment,
     Styles? styles,
     Urls? urls,
   }) = _AppConfig;

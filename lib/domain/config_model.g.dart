@@ -9,6 +9,13 @@ part of 'config_model.dart';
 _AppConfig _$AppConfigFromJson(Map<String, dynamic> json) => _AppConfig(
   appName: json['app_name'] as String?,
   appIcon: json['app_icon'] as String?,
+  packageName: json['package_name'] as String?,
+  version: json['version'] as String?,
+  versionCode: json['version_code'] as String?,
+  description: json['description'] as String?,
+  platform: json['platform'] as String?,
+  buildType: json['build_type'] as String?,
+  environment: json['environment'] as String?,
   styles: json['styles'] == null
       ? null
       : Styles.fromJson(json['styles'] as Map<String, dynamic>),
@@ -21,6 +28,13 @@ Map<String, dynamic> _$AppConfigToJson(_AppConfig instance) =>
     <String, dynamic>{
       'app_name': instance.appName,
       'app_icon': instance.appIcon,
+      'package_name': instance.packageName,
+      'version': instance.version,
+      'version_code': instance.versionCode,
+      'description': instance.description,
+      'platform': instance.platform,
+      'build_type': instance.buildType,
+      'environment': instance.environment,
       'styles': instance.styles?.toJson(),
       'urls': instance.urls?.toJson(),
     };
