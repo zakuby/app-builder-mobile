@@ -67,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: BottomNavigationBar(
             backgroundColor: AppColors.primary,
             selectedItemColor: AppColors.textSelectedColor,
-            unselectedItemColor: Colors.white,
+            unselectedItemColor: AppColors.textUnselectedColor,
             selectedFontSize: 10,
             selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700),
             unselectedFontSize: 10,
