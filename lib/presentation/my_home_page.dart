@@ -65,8 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
             hoverColor: Colors.transparent,
           ),
           child: BottomNavigationBar(
-            backgroundColor: Colors.black,
-            selectedItemColor: AppColors.primary,
+            backgroundColor: AppColors.primary,
+            selectedItemColor: AppColors.textSelectedColor,
             unselectedItemColor: Colors.white,
             selectedFontSize: 10,
             selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700),
@@ -97,6 +97,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _navBarIcon(IconData icon, int index, int currentIndex) => Icon(
     icon,
     size: 24,
-    color: index == currentIndex ? AppColors.primary : AppColors.secondary,
+    color: index == currentIndex ? AppColors.textSelectedColor : AppColors.textUnselectedColor,
   );
 }
