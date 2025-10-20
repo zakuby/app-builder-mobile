@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (context, state) => Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.primary,
-          title: Text(widget.title),
+          title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
           centerTitle: true,
         ),
         body: SafeArea(
