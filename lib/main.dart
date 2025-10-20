@@ -12,12 +12,12 @@ void main() async {
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
       // Log to console or crash reporting service
-      print('Flutter Error: ${details.exception}');
+      debugPrint('Flutter Error: ${details.exception}');
     };
 
     // Catch async errors
     PlatformDispatcher.instance.onError = (error, stack) {
-      print('Async Error: $error');
+      debugPrint('Async Error: $error');
       return true;
     };
 
@@ -35,7 +35,7 @@ void main() async {
         }
       },
       (error, stack) {
-        print('Zone Error: $error\n$stack');
+        debugPrint('Zone Error: $error\n$stack');
       },
     );
   }
@@ -43,7 +43,7 @@ void main() async {
   // Simple error display widget
   class ErrorApp extends StatelessWidget {
     final String error;
-    const ErrorApp({required this.error});
+    const ErrorApp({super.key, required this.error});
 
     @override
     Widget build(BuildContext context) {
