@@ -8,7 +8,10 @@ import 'package:app_builder_mobile/presentation/auth/cubit/auth_cubit.dart';
 import 'package:app_builder_mobile/presentation/auth/cubit/auth_state.dart';
 import 'package:app_builder_mobile/presentation/home/cubit/home_cubit.dart';
 import 'package:app_builder_mobile/presentation/home/home_page.dart';
+import 'package:app_builder_mobile/services/fcm_service.dart';
 import 'package:app_builder_mobile/util/app_util.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -32,6 +35,17 @@ void main() async {
         WidgetsFlutterBinding.ensureInitialized();
 
         try {
+          // Initialize Firebase
+          await Firebase.initializeApp();
+          debugPrint('Firebase initialized successfully');
+
+          // Set up background message handler
+          FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+          // Initialize FCM service
+          await FCMService().initialize();
+          debugPrint('FCM Service initialized successfully');
+
           // Initialize dependency injection
           await initializeDependencies();
 
