@@ -29,32 +29,40 @@ abstract class WebViewMessageHandler {
     if (callbackId == null || _controller == null) return;
 
     try {
-      // Encode data as JSON string (for the 'data' field only)
-      final dataJson = data != null ? json.encode(data) : 'null';
-      final messageEscaped = message
-          .replaceAll("'", "\\'")
-          .replaceAll('\n', '\\n');
+      // Build response object
+      final response = {
+        'success': success,
+        'message': message,
+        if (data != null) 'data': data,
+      };
 
-      // Construct JavaScript object directly
+      final jsonResponse = json.encode(response);
+
+      // Escape the JSON string for safe embedding in JavaScript
+      final escapedJson = jsonResponse
+          .replaceAll('\\', '\\\\') // Escape backslashes first
+          .replaceAll("'", "\\'") // Escape single quotes
+          .replaceAll('\n', '\\n') // Escape newlines
+          .replaceAll('\r', '\\r'); // Escape carriage returns
+
       final jsCode =
           '''
         (function() {
           try {
+            var parsedData = JSON.parse('$escapedJson');
             if (typeof window.handleFlutterCallback === "function") {
-              window.handleFlutterCallback("$callbackId", {
-                success: $success,
-                message: '$messageEscaped',
-                data: $dataJson
-              });
+              window.handleFlutterCallback("$callbackId", parsedData);
             }
           } catch (e) {
-            console.error('Error in callback:', e);
+            console.error('Error parsing callback data:', e, 'JSON was:', '$escapedJson');
           }
         })();
       ''';
 
       _controller!.runJavaScript(jsCode);
-      debugPrint('Sent callback: $callbackId with success: $success');
+      debugPrint(
+        'Sent callback: $callbackId with success: $success $jsonResponse',
+      );
     } catch (e) {
       debugPrint('Error sending callback: $e');
     }
