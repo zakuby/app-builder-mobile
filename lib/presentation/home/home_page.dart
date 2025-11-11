@@ -1,3 +1,7 @@
+import 'package:app_builder_mobile/core/di/injection.dart';
+import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
+import 'package:app_builder_mobile/presentation/auth/auth_page.dart';
+import 'package:app_builder_mobile/presentation/auth/cubit/auth_cubit.dart';
 import 'package:app_builder_mobile/presentation/home/cubit/home_cubit.dart';
 import 'package:app_builder_mobile/presentation/webview/custom_web_view.dart';
 import 'package:app_builder_mobile/presentation/webview/default_web_view_message_handler.dart';
@@ -29,7 +33,9 @@ class _HomePageState extends State<HomePage> {
     _pages = tabs
         .map((tab) => CustomWebView(
               url: tab.url ?? "",
-              messageHandler: DefaultWebViewMessageHandler(),
+              messageHandler: DefaultWebViewMessageHandler(
+                onLogout: _handleLogout,
+              ),
             ))
         .toList();
 
@@ -48,6 +54,21 @@ class _HomePageState extends State<HomePage> {
       (index) => index < defaultIcons.length
           ? defaultIcons[index]
           : Icons.tab,
+    );
+  }
+
+  void _handleLogout() {
+    debugPrint('Logout triggered, navigating to auth page');
+
+    // Navigate to auth page and remove all previous routes
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => AuthCubit(authRepository: getIt<AuthRepository>()),
+          child: const AuthPage(),
+        ),
+      ),
+      (route) => false, // Remove all routes from the stack
     );
   }
 

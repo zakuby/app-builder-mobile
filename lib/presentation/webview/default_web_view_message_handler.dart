@@ -9,7 +9,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 /// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
-  final DeviceInfoDataSource _deviceInfoDataSource = getIt<DeviceInfoDataSource>();
+  final DeviceInfoDataSource _deviceInfoDataSource =
+      getIt<DeviceInfoDataSource>();
+  final VoidCallback? onLogout;
+
+  DefaultWebViewMessageHandler({this.onLogout});
 
   @override
   Future<void> handleMessage(
@@ -32,6 +36,7 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           await _handleDeleteSecure(data, callbackId);
           break;
         case 'LOGOUT':
+        case 'logout':
           await _handleLogout(callbackId);
           break;
         case 'GET_DEVICE_INFO':
@@ -102,7 +107,11 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
       final value = await _authRepository.getSecure(key);
       debugPrint('Retrieved secure data with key: $key');
 
-      sendCallback(callbackId, true, 'Data retrieved successfully', value);
+      // ✅ Send data as a Map with both key and value
+      sendCallback(callbackId, true, 'Data retrieved successfully', {
+        'key': key, // Include the key
+        'value': value, // The actual value
+      });
     } catch (e) {
       debugPrint('Error handling GET_SECURE: $e');
       sendCallback(callbackId, false, 'Error retrieving data: $e');
@@ -145,6 +154,9 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
       debugPrint('User logged out successfully');
 
       sendCallback(callbackId, true, 'Logged out successfully');
+
+      // Navigate to auth page after logout
+      onLogout?.call();
     } catch (e) {
       debugPrint('Error handling LOGOUT: $e');
       sendCallback(callbackId, false, 'Error logging out: $e');
@@ -157,7 +169,12 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
       final deviceInfo = await _deviceInfoDataSource.getDeviceInfo();
       debugPrint('Retrieved device info: $deviceInfo');
 
-      sendCallback(callbackId, true, 'Device info retrieved successfully', deviceInfo);
+      sendCallback(
+        callbackId,
+        true,
+        'Device info retrieved successfully',
+        deviceInfo,
+      );
     } catch (e) {
       debugPrint('Error handling GET_DEVICE_INFO: $e');
       sendCallback(callbackId, false, 'Error retrieving device info: $e');
@@ -176,7 +193,12 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
 
       debugPrint('Retrieved app version: $versionData');
 
-      sendCallback(callbackId, true, 'App version retrieved successfully', versionData);
+      sendCallback(
+        callbackId,
+        true,
+        'App version retrieved successfully',
+        versionData,
+      );
     } catch (e) {
       debugPrint('Error handling GET_APP_VERSION: $e');
       sendCallback(callbackId, false, 'Error retrieving app version: $e');
