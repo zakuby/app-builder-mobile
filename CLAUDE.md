@@ -7,11 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a Flutter mobile application called "App Builder Mobile" that provides a configurable WebView-based app with customizable tabs, colors, and URLs. The app is driven by JSON configuration files that control its appearance and behavior.
 
 **Key Characteristics:**
+- **Clean Architecture**: Separation of Data, Domain, and Presentation layers
 - JSON-driven configuration for complete app customization
 - Multi-tab WebView navigation with state preservation
-- BLoC pattern for state management
+- BLoC pattern with Cubit for state management
+- Repository pattern with data sources
 - Freezed models with JSON serialization
 - Compile-time configuration injection
+- Pluggable WebView message handlers
 
 ## Development Commands
 
@@ -102,18 +105,27 @@ AppUtil.config.urls.tabs        // Get tab configurations
 
 ### State Management
 - Uses **BLoC pattern** via `flutter_bloc` (^9.1.1) and `bloc` (^9.0.1) packages
-- Main cubit: `MyHomeCubit` in `lib/presentation/my_home_cubit.dart`
+- **AuthCubit** in `lib/presentation/auth/cubit/auth_cubit.dart`
+  - Manages authentication state using freezed states
+  - States: `initial`, `loading`, `authenticated`, `unauthenticated`, `error`
+  - Methods: `checkAuthStatus()`, `login()`, `logout()`, `saveSecure()`, `getSecure()`, `deleteSecure()`
+- **HomeCubit** in `lib/presentation/home/cubit/home_cubit.dart`
   - Manages bottom navigation tab index
   - State is an integer (0-based) representing the currently selected tab
-  - Methods: `setIndex(int index)` to switch tabs
+  - Methods: `changeIndex(int index)` to switch tabs
 
 **Usage pattern:**
 ```dart
 // Read state
-context.watch<MyHomeCubit>().state
+context.watch<HomeCubit>().state
+context.watch<AuthCubit>().state
 
 // Update state
-context.read<MyHomeCubit>().setIndex(newIndex)
+context.read<HomeCubit>().changeIndex(newIndex)
+
+// Auth operations
+context.read<AuthCubit>().login(userData)
+context.read<AuthCubit>().logout()
 ```
 
 ### Domain Models
@@ -135,36 +147,80 @@ Models are in `lib/domain/` and use:
 ```
 
 ### UI Structure
-All UI code is in `lib/presentation/`:
+UI code is organized by feature in `lib/presentation/`:
 
-- **`MyHomePage`**: Main scaffold with `IndexedStack` for tab navigation
+#### Auth Feature (`lib/presentation/auth/`)
+- **`AuthPage`**: Login/authentication screen with WebView
+  - Handles JavaScript channel messages for authentication
+  - Uses `AuthCubit` for state management
+  - Navigates to home on successful login
+
+- **`AuthCubit`**: State management for authentication
+  - States defined using freezed in `auth_state.dart`
+  - Manages login, logout, and secure storage operations
+
+#### Home Feature (`lib/presentation/home/`)
+- **`HomePage`**: Main scaffold with `IndexedStack` for tab navigation
   - Uses `IndexedStack` to keep all WebViews in memory (preserves state)
   - Bottom navigation bar for tab switching
   - Dynamically builds tabs from config
+  - Injects `DefaultWebViewMessageHandler` to each tab's WebView
 
-- **`CustomWebView`**: WebView wrapper widget
+- **`HomeCubit`**: Simple state management for tab index
+
+#### WebView Feature (`lib/presentation/webview/`)
+- **`CustomWebView`**: Reusable WebView wrapper widget
   - JavaScript enabled by default
-  - Takes URL as parameter
+  - Requires `messageHandler` parameter for JavaScript bridge
   - Uses `webview_flutter` (^4.13.0) package
 
-- **Color Management**: `AppColors` utility (in `lib/util/app_colors.dart`)
-  - Centralized color access from configuration
-  - Provides type-safe color getters
+- **`WebViewMessageHandler`**: Abstract interface for handling JavaScript messages
+  - `handleMessage()`: Process incoming messages
+  - `sendCallback()`: Send responses to JavaScript
+  - `parseMessage()`: Parse JSON messages
+
+- **`DefaultWebViewMessageHandler`**: Default implementation
+  - Handles SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT actions
+  - Uses `AuthRepository` for secure storage operations
+
+#### Utilities
+- **`AppColors`** (in `lib/util/app_colors.dart`): Centralized color access from configuration
+- **`AppUtil`** (in `lib/util/app_util.dart`): Config parsing and access
 
 ### Code Organization
 ```
 lib/
 ├── config/                      # JSON configuration files
 │   └── test_config.json        # Test environment config
-├── domain/                      # Data models (freezed)
-│   ├── config_model.dart       # Model definitions
-│   ├── config_model.freezed.dart  # Generated freezed code
-│   └── config_model.g.dart     # Generated JSON serialization
-├── presentation/                # UI layer
-│   ├── my_home_page.dart       # Main app scaffold
-│   ├── my_home_cubit.dart      # Tab navigation state management
-│   └── webview/                # WebView components
-│       └── custom_web_view.dart
+├── core/                        # Core functionality
+│   └── di/
+│       └── injection.dart       # Dependency injection setup (GetIt)
+├── data/                        # Data layer
+│   ├── datasources/
+│   │   └── auth_local_datasource.dart    # Secure storage operations
+│   └── repositories/
+│       └── auth_repository_impl.dart     # Repository implementations
+├── domain/                      # Domain layer
+│   ├── repositories/
+│   │   └── auth_repository.dart          # Repository interfaces
+│   ├── config_model.dart                 # Configuration models
+│   ├── config_model.freezed.dart        # Generated freezed code
+│   └── config_model.g.dart              # Generated JSON serialization
+├── presentation/                # Presentation layer (UI + BLoC)
+│   ├── auth/                    # Auth feature
+│   │   ├── cubit/
+│   │   │   ├── auth_cubit.dart
+│   │   │   ├── auth_state.dart
+│   │   │   └── auth_state.freezed.dart (generated)
+│   │   └── auth_page.dart
+│   ├── home/                    # Home feature
+│   │   ├── cubit/
+│   │   │   └── home_cubit.dart
+│   │   └── home_page.dart
+│   └── webview/                 # WebView feature
+│       ├── custom_web_view.dart
+│       ├── web_view_message_handler.dart
+│       └── default_web_view_message_handler.dart
 ├── util/                        # Utilities
 │   ├── app_util.dart           # Config parsing and access
 │   └── app_colors.dart         # Centralized color management
@@ -177,6 +233,9 @@ lib/
 - `flutter_bloc: ^9.1.1` - BLoC state management
 - `bloc: ^9.0.1` - BLoC core library
 - `webview_flutter: ^4.13.0` - WebView integration
+- `flutter_secure_storage: ^9.2.2` - Encrypted secure storage
+- `get_it: ^8.0.2` - Dependency injection / service locator
+- `device_info_plus: ^11.1.1` - Device information
 - `freezed_annotation: ^3.1.0` - Code generation annotations
 - `json_annotation: ^4.9.0` - JSON serialization annotations
 - `collection: ^1.19.1` - Collection utilities
@@ -184,9 +243,10 @@ lib/
 
 ### Development
 - `build_runner: ^2.4.15` - Code generation runner
-- `freezed: ^3.2.3` - Code generation for models
+- `freezed: ^3.2.3` - Code generation for models and states
 - `json_serializable: ^6.8.0` - JSON serialization code gen
 - `flutter_lints: ^6.0.0` - Linting rules
+- `flutter_launcher_icons: ^0.14.4` - App icon generation
 
 ## Important Notes & Best Practices
 
@@ -225,6 +285,14 @@ lib/
 
 ## Common Tasks
 
+### Adding a New Feature
+1. Create feature folder: `lib/presentation/your_feature/`
+2. Create cubit: `lib/presentation/your_feature/cubit/your_feature_cubit.dart`
+3. Create freezed states: `lib/presentation/your_feature/cubit/your_feature_state.dart`
+4. Create UI: `lib/presentation/your_feature/your_feature_page.dart`
+5. Run `dart run build_runner build --delete-conflicting-outputs`
+6. Wire up in navigation/routing
+
 ### Adding a New Configuration Field
 1. Update model in `lib/domain/config_model.dart`
 2. Run `dart run build_runner build --delete-conflicting-outputs`
@@ -241,10 +309,26 @@ lib/
 2. Update hex values in `styles.color` object
 3. Restart app
 
-### Adding a New Screen (Non-WebView)
-1. Create new widget in `lib/presentation/`
-2. Create corresponding cubit if needed
-3. Update navigation logic in `MyHomePage`
+### Extending WebView Message Handler
+1. Create custom handler extending `WebViewMessageHandler`
+2. Implement `handleMessage()` method
+3. Use `sendCallback()` to respond to JavaScript
+4. Inject handler when creating `CustomWebView` in `HomePage`
+
+### Adding Repository Operations
+1. Add method to repository interface: `lib/domain/repositories/auth_repository.dart`
+2. Implement in repository: `lib/data/repositories/auth_repository_impl.dart`
+3. Add data source method if needed: `lib/data/datasources/auth_local_datasource.dart`
+4. Repository is automatically available via GetIt singleton
+5. Use in Cubit: `getIt<AuthRepository>()`
+
+### Adding New Dependencies to DI Container
+1. Edit `lib/core/di/injection.dart`
+2. Register data sources with `registerLazySingleton`
+3. Register repositories with `registerLazySingleton`
+4. Access anywhere with `getIt<YourType>()`
+
+**Note:** Cubits should NOT be registered in GetIt - use BlocProvider for proper lifecycle management
 
 ## Troubleshooting
 
