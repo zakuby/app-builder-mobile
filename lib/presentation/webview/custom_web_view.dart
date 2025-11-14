@@ -1,7 +1,9 @@
 import 'package:app_builder_mobile/presentation/webview/default_web_view_message_handler.dart';
 import 'package:app_builder_mobile/presentation/webview/web_view_message_handler.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:app_builder_mobile/presentation/webview/web_view_widget.dart' if (dart.library.html) 'package:app_builder_mobile/presentation/webview/web_view_widget.dart';
 
 /// Reusable WebView widget with JavaScript channel support
 ///
@@ -37,16 +39,18 @@ class CustomWebView extends StatefulWidget {
 }
 
 class _CustomWebViewState extends State<CustomWebView> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
 
   @override
   void initState() {
     super.initState();
-    // Use provided handler or keep it null (will be set by parent if needed)
-    _initializeWebView();
+    // Only initialize WebView controller for mobile platforms
+    if (!kIsWeb) {
+      _initializeWebView();
+    }
   }
 
-  /// Initialize WebView with JavaScript channel
+  /// Initialize WebView with JavaScript channel (mobile only)
   void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -60,7 +64,7 @@ class _CustomWebViewState extends State<CustomWebView> {
       ..loadRequest(Uri.parse(widget.url));
 
     // Provide controller to message handler for callbacks
-    widget.messageHandler.setController(_controller);
+    widget.messageHandler.setController(_controller!);
   }
 
   /// Handle messages from the web app via JavaScript channel
@@ -84,6 +88,17 @@ class _CustomWebViewState extends State<CustomWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
+    // Use IFrame for web platform, native WebView for mobile
+    if (kIsWeb) {
+      return WebIFrameWidget(
+        url: widget.url,
+        onMessageReceived: (message) {
+          // Handle messages from web if needed
+          debugPrint('Message from iframe: $message');
+        },
+      );
+    }
+
+    return WebViewWidget(controller: _controller!);
   }
 }

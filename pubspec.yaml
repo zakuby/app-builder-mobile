@@ -26,6 +26,8 @@ dependencies:
   get_it: ^8.0.2
   device_info_plus: ^11.1.1
   package_info_plus: ^8.1.2
+  url_launcher: ^6.3.1
+  pointer_interceptor: ^0.10.1+2
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +45,11 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
+  web:
+    generate: true
+    image_path: "assets/icons/app_icon.png"
+    background_color: "#ffffff"
+    theme_color: "#0c8fbb"
   image_path: "assets/icons/app_icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#ffffff"
