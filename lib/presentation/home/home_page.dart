@@ -78,11 +78,11 @@ class _HomePageState extends State<HomePage> {
 
     return BlocBuilder<HomeCubit, int>(
       builder: (context, state) => Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppColors.primary,
-          title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
-          centerTitle: true,
-        ),
+        // appBar: AppBar(
+        //   backgroundColor: AppColors.primary,
+        //   title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
+        //   centerTitle: true,
+        // ),
         body: SafeArea(
           child: IndexedStack(index: state, children: _pages),
         ),
