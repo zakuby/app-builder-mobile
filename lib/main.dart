@@ -1,8 +1,13 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:app_builder_mobile/presentation/my_home_cubit.dart';
-import 'package:app_builder_mobile/presentation/my_home_page.dart';
+import 'package:app_builder_mobile/core/di/injection.dart';
+import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
+import 'package:app_builder_mobile/presentation/auth/auth_page.dart';
+import 'package:app_builder_mobile/presentation/auth/cubit/auth_cubit.dart';
+import 'package:app_builder_mobile/presentation/auth/cubit/auth_state.dart';
+import 'package:app_builder_mobile/presentation/home/cubit/home_cubit.dart';
+import 'package:app_builder_mobile/presentation/home/home_page.dart';
 import 'package:app_builder_mobile/util/app_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,8 +32,10 @@ void main() async {
         WidgetsFlutterBinding.ensureInitialized();
 
         try {
-          // Load your config here
-          runApp(MyApp());
+          // Initialize dependency injection
+          await initializeDependencies();
+
+          runApp(const MyApp());
         } catch (e, stack) {
           debugPrint('Init Error: $e\n$stack');
           runApp(ErrorApp(error: e.toString()));
@@ -74,15 +81,70 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'App Builder',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return BlocProvider(
+      create: (context) => AuthCubit(authRepository: getIt<AuthRepository>()),
+      child: MaterialApp(
+        title: 'App Builder',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        home: const AuthCheckWrapper(),
       ),
-      home: BlocProvider(
-        create: (context) => MyHomeCubit(),
-        child: MyHomePage(title: AppUtil.config.appName ?? "",),
-      ),
+    );
+  }
+}
+
+/// Wrapper widget that checks authentication status and routes accordingly
+class AuthCheckWrapper extends StatefulWidget {
+  const AuthCheckWrapper({super.key});
+
+  @override
+  State<AuthCheckWrapper> createState() => _AuthCheckWrapperState();
+}
+
+class _AuthCheckWrapperState extends State<AuthCheckWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    final loginUrl = AppUtil.config.urls?.login;
+
+    // If no login URL configured, skip auth check
+    if (loginUrl == null || loginUrl.isEmpty) {
+      context.read<AuthCubit>().emit(const AuthState.authenticated());
+      return;
+    }
+
+    // Check if user is logged in
+    await context.read<AuthCubit>().checkAuthStatus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+          loading: () => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+          authenticated: (userData) => BlocProvider(
+            create: (context) => HomeCubit(),
+            child: HomePage(title: AppUtil.config.appName ?? ""),
+          ),
+          unauthenticated: () => const AuthPage(),
+          error: (message) {
+            // On error, show auth page
+            debugPrint('Auth error: $message');
+            return const AuthPage();
+          },
+        );
+      },
     );
   }
 }

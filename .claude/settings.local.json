@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:app-builder-bridge.vercel.app)",
+      "Bash(flutter pub get:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(flutter analyze:*)",
+      "Bash(dart run build_runner:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
