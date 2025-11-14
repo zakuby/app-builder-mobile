@@ -7,6 +7,7 @@ import 'package:app_builder_mobile/presentation/webview/custom_web_view.dart';
 import 'package:app_builder_mobile/presentation/webview/default_web_view_message_handler.dart';
 import 'package:app_builder_mobile/util/app_colors.dart';
 import 'package:app_builder_mobile/util/app_util.dart';
+import 'package:app_builder_mobile/util/icon_mapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:collection/collection.dart';
@@ -39,22 +40,10 @@ class _HomePageState extends State<HomePage> {
             ))
         .toList();
 
-    // Default icons based on number of tabs
-    final defaultIcons = [
-      Icons.home,
-      Icons.newspaper,
-      Icons.shopping_bag,
-      Icons.store,
-      Icons.person,
-      Icons.settings,
-    ];
-
-    _pagesIcon = List.generate(
-      tabs.length,
-      (index) => index < defaultIcons.length
-          ? defaultIcons[index]
-          : Icons.tab,
-    );
+    // Generate icons from config tabs using IconMapper
+    _pagesIcon = tabs
+        .map((tab) => IconMapper.getIcon(tab.icon))
+        .toList();
   }
 
   void _handleLogout() {

@@ -87,10 +87,14 @@ Map<String, dynamic> _$UrlsToJson(_Urls instance) => <String, dynamic>{
   'tabs': instance.tabs?.map((e) => e.toJson()).toList(),
 };
 
-_TabItem _$TabItemFromJson(Map<String, dynamic> json) =>
-    _TabItem(title: json['title'] as String?, url: json['url'] as String?);
+_TabItem _$TabItemFromJson(Map<String, dynamic> json) => _TabItem(
+  title: json['title'] as String?,
+  url: json['url'] as String?,
+  icon: json['icon'] as String?,
+);
 
 Map<String, dynamic> _$TabItemToJson(_TabItem instance) => <String, dynamic>{
   'title': instance.title,
   'url': instance.url,
+  'icon': instance.icon,
 };

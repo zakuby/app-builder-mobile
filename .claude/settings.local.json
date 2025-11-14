@@ -5,7 +5,8 @@
       "Bash(flutter pub get:*)",
       "WebFetch(domain:github.com)",
       "Bash(flutter analyze:*)",
-      "Bash(dart run build_runner:*)"
+      "Bash(dart run build_runner:*)",
+      "Bash(flutter pub run build_runner build:*)"
     ],
     "deny": [],
     "ask": []
