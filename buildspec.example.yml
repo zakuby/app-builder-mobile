@@ -1,0 +1,169 @@
+# AWS CodeBuild buildspec for Flutter app with Firebase (Android only)
+# Simple approach: Download google-services.json directly in pre_build phase
+
+version: 0.2
+
+env:
+  variables:
+    FLUTTER_VERSION: "3.27.1"
+  # Choose ONE method below:
+
+  # METHOD 1: AWS Systems Manager Parameter Store (Recommended for security)
+  parameter-store:
+    GOOGLE_SERVICES_JSON: /myapp/firebase/google-services-json
+
+  # METHOD 2: S3 (Uncomment if using S3)
+  # variables:
+  #   FIREBASE_S3_BUCKET: my-firebase-configs
+  #   FIREBASE_S3_KEY: production/google-services.json
+
+phases:
+  install:
+    commands:
+      - echo "Installing Flutter..."
+      - git clone https://github.com/flutter/flutter.git -b stable --depth 1
+      - export PATH="$PATH:`pwd`/flutter/bin"
+      - flutter --version
+      - flutter pub get
+
+  pre_build:
+    commands:
+      - echo "Setting up Firebase configuration for Android..."
+
+      # METHOD 1: From Parameter Store (if using parameter-store above)
+      - echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      # METHOD 2: From S3 (uncomment if using S3)
+      # - aws s3 cp s3://$FIREBASE_S3_BUCKET/$FIREBASE_S3_KEY android/app/google-services.json
+
+      # Verify file was created
+      - ls -la android/app/google-services.json
+      - echo "✓ google-services.json ready"
+
+  build:
+    commands:
+      - echo "Building Android APK..."
+      - flutter build apk --release --dart-define-from-file=lib/config/test_config.json
+
+      # Alternative: Build App Bundle for Play Store
+      # - flutter build appbundle --release --dart-define-from-file=lib/config/test_config.json
+
+  post_build:
+    commands:
+      - echo "Build completed successfully!"
+      # Clean up sensitive files
+      - rm -f android/app/google-services.json
+
+artifacts:
+  files:
+    - build/app/outputs/flutter-apk/app-release.apk
+    # For AAB (uncomment if building app bundle):
+    # - build/app/outputs/bundle/release/app-release.aab
+  name: app-$(date +%Y%m%d-%H%M%S)
+
+cache:
+  paths:
+    - '/root/.pub-cache/**/*'
+    - '.dart_tool/**/*'
+
+# Setup Instructions:
+#
+# 1. Store google-services.json in AWS Systems Manager Parameter Store:
+#    aws ssm put-parameter \
+#      --name "/myapp/firebase/google-services-json" \
+#      --value "$(cat google-services.json)" \
+#      --type "SecureString"
+#
+# 2. Alternative - Store in S3:
+#    aws s3 cp google-services.json s3://my-bucket/firebase/google-services.json
+#
+# 3. Update the parameter name/S3 path in the env section above
+#
+# 4. Ensure CodeBuild service role has permissions:
+#    - For Parameter Store: ssm:GetParameter
+#    - For S3: s3:GetObject
+
+# AWS CodeBuild buildspec for Flutter app with Firebase (Android only)
+# Simple approach: Download google-services.json directly in pre_build phase
+
+version: 0.2
+
+env:
+  variables:
+    FLUTTER_VERSION: "3.27.1"
+  # Choose ONE method below:
+
+  # METHOD 1: AWS Systems Manager Parameter Store (Recommended for security)
+  parameter-store:
+    GOOGLE_SERVICES_JSON: /myapp/firebase/google-services-json
+
+  # METHOD 2: S3 (Uncomment if using S3)
+  # variables:
+  #   FIREBASE_S3_BUCKET: my-firebase-configs
+  #   FIREBASE_S3_KEY: production/google-services.json
+
+phases:
+  install:
+    commands:
+      - echo "Installing Flutter..."
+      - git clone https://github.com/flutter/flutter.git -b stable --depth 1
+      - export PATH="$PATH:`pwd`/flutter/bin"
+      - flutter --version
+      - flutter pub get
+
+  pre_build:
+    commands:
+      - echo "Setting up Firebase configuration for Android..."
+
+      # METHOD 1: From Parameter Store (if using parameter-store above)
+      - echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      # METHOD 2: From S3 (uncomment if using S3)
+      # - aws s3 cp s3://$FIREBASE_S3_BUCKET/$FIREBASE_S3_KEY android/app/google-services.json
+
+      # Verify file was created
+      - ls -la android/app/google-services.json
+      - echo "✓ google-services.json ready"
+
+  build:
+    commands:
+      - echo "Building Android APK..."
+      - flutter build apk --release --dart-define-from-file=lib/config/test_config.json
+
+      # Alternative: Build App Bundle for Play Store
+      # - flutter build appbundle --release --dart-define-from-file=lib/config/test_config.json
+
+  post_build:
+    commands:
+      - echo "Build completed successfully!"
+      # Clean up sensitive files
+      - rm -f android/app/google-services.json
+
+artifacts:
+  files:
+    - build/app/outputs/flutter-apk/app-release.apk
+    # For AAB (uncomment if building app bundle):
+    # - build/app/outputs/bundle/release/app-release.aab
+  name: app-$(date +%Y%m%d-%H%M%S)
+
+cache:
+  paths:
+    - '/root/.pub-cache/**/*'
+    - '.dart_tool/**/*'
+
+# Setup Instructions:
+#
+# 1. Store google-services.json in AWS Systems Manager Parameter Store:
+#    aws ssm put-parameter \
+#      --name "/myapp/firebase/google-services-json" \
+#      --value "$(cat google-services.json)" \
+#      --type "SecureString"
+#
+# 2. Alternative - Store in S3:
+#    aws s3 cp google-services.json s3://my-bucket/firebase/google-services.json
+#
+# 3. Update the parameter name/S3 path in the env section above
+#
+# 4. Ensure CodeBuild service role has permissions:
+#    - For Parameter Store: ssm:GetParameter
+#    - For S3: s3:GetObject
