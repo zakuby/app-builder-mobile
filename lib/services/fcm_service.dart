@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:app_builder_mobile/core/di/injection.dart';
+import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -12,6 +14,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Title: ${message.notification?.title}');
   debugPrint('Body: ${message.notification?.body}');
 }
+
+/// Key used to store FCM token in secure storage
+const String _fcmTokenStorageKey = 'fcm_token';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -48,15 +53,16 @@ class FCMService {
       // Initialize local notifications
       await _initializeLocalNotifications();
 
-      // Get FCM token
+      // Get FCM token and save to secure storage
       _fcmToken = await _firebaseMessaging.getToken();
       debugPrint('FCM Token: $_fcmToken');
+      await _saveTokenToSecureStorage(_fcmToken);
 
       // Listen to token refresh
-      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+      _firebaseMessaging.onTokenRefresh.listen((newToken) async {
         _fcmToken = newToken;
         debugPrint('FCM Token refreshed: $newToken');
-        // TODO: Send token to your backend server
+        await _saveTokenToSecureStorage(newToken);
       });
 
       // Configure foreground notification presentation options for iOS
@@ -199,9 +205,66 @@ class FCMService {
     try {
       await _firebaseMessaging.deleteToken();
       _fcmToken = null;
+      await _deleteTokenFromSecureStorage();
       debugPrint('FCM token deleted');
     } catch (e) {
       debugPrint('Error deleting FCM token: $e');
+    }
+  }
+
+  /// Regenerate FCM token (delete old token and get new one)
+  /// Used when user logs out to invalidate the current token
+  Future<String?> regenerateToken() async {
+    try {
+      // Delete the old token
+      await _firebaseMessaging.deleteToken();
+      await _deleteTokenFromSecureStorage();
+      debugPrint('Old FCM token deleted for regeneration');
+
+      // Get a new token
+      _fcmToken = await _firebaseMessaging.getToken();
+      debugPrint('New FCM Token generated: $_fcmToken');
+      await _saveTokenToSecureStorage(_fcmToken);
+
+      return _fcmToken;
+    } catch (e) {
+      debugPrint('Error regenerating FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Get FCM token from secure storage
+  Future<String?> getTokenFromSecureStorage() async {
+    try {
+      final authRepository = getIt<AuthRepository>();
+      final token = await authRepository.getSecure(_fcmTokenStorageKey);
+      return token as String?;
+    } catch (e) {
+      debugPrint('Error getting FCM token from secure storage: $e');
+      return null;
+    }
+  }
+
+  /// Save FCM token to secure storage
+  Future<void> _saveTokenToSecureStorage(String? token) async {
+    if (token == null) return;
+    try {
+      final authRepository = getIt<AuthRepository>();
+      await authRepository.saveSecure(_fcmTokenStorageKey, token);
+      debugPrint('FCM token saved to secure storage');
+    } catch (e) {
+      debugPrint('Error saving FCM token to secure storage: $e');
+    }
+  }
+
+  /// Delete FCM token from secure storage
+  Future<void> _deleteTokenFromSecureStorage() async {
+    try {
+      final authRepository = getIt<AuthRepository>();
+      await authRepository.deleteSecure(_fcmTokenStorageKey);
+      debugPrint('FCM token deleted from secure storage');
+    } catch (e) {
+      debugPrint('Error deleting FCM token from secure storage: $e');
     }
   }
 }

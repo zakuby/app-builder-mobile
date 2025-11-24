@@ -3,8 +3,8 @@ import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
 import 'package:app_builder_mobile/presentation/auth/auth_page.dart';
 import 'package:app_builder_mobile/presentation/auth/cubit/auth_cubit.dart';
 import 'package:app_builder_mobile/presentation/home/cubit/home_cubit.dart';
+import 'package:app_builder_mobile/presentation/home/home_web_view_message_handler.dart';
 import 'package:app_builder_mobile/presentation/webview/custom_web_view.dart';
-import 'package:app_builder_mobile/presentation/webview/default_web_view_message_handler.dart';
 import 'package:app_builder_mobile/util/app_colors.dart';
 import 'package:app_builder_mobile/util/app_util.dart';
 import 'package:app_builder_mobile/util/icon_mapper.dart';
@@ -23,6 +23,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final List<Widget> _pages;
   late final List<IconData> _pagesIcon;
+  bool _isBottomBarVisible = true;
+  bool _isNavigationBarVisible = false;
 
   @override
   void initState() {
@@ -30,12 +32,16 @@ class _HomePageState extends State<HomePage> {
     final tabs = AppUtil.config.urls?.tabs ?? [];
 
     // Generate pages from config tabs
-    // DefaultWebViewMessageHandler gets repository from GetIt internally
+    // HomeWebViewMessageHandler extends DefaultWebViewMessageHandler with bar visibility actions
     _pages = tabs
         .map((tab) => CustomWebView(
               url: tab.url ?? "",
-              messageHandler: DefaultWebViewMessageHandler(
+              messageHandler: HomeWebViewMessageHandler(
                 onLogout: _handleLogout,
+                onHideBottomBar: _hideBottomBar,
+                onShowBottomBar: _showBottomBar,
+                onShowNavigationBar: _showNavigationBar,
+                onHideNavigationBar: _hideNavigationBar,
               ),
             ))
         .toList();
@@ -44,6 +50,30 @@ class _HomePageState extends State<HomePage> {
     _pagesIcon = tabs
         .map((tab) => IconMapper.getIcon(tab.icon))
         .toList();
+  }
+
+  void _hideBottomBar() {
+    setState(() {
+      _isBottomBarVisible = false;
+    });
+  }
+
+  void _showBottomBar() {
+    setState(() {
+      _isBottomBarVisible = true;
+    });
+  }
+
+  void _showNavigationBar() {
+    setState(() {
+      _isNavigationBarVisible = true;
+    });
+  }
+
+  void _hideNavigationBar() {
+    setState(() {
+      _isNavigationBarVisible = false;
+    });
   }
 
   void _handleLogout() {
@@ -67,46 +97,50 @@ class _HomePageState extends State<HomePage> {
 
     return BlocBuilder<HomeCubit, int>(
       builder: (context, state) => Scaffold(
-        // appBar: AppBar(
-        //   backgroundColor: AppColors.primary,
-        //   title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
-        //   centerTitle: true,
-        // ),
+        appBar: _isNavigationBarVisible
+            ? AppBar(
+                backgroundColor: AppColors.primary,
+                title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
+                centerTitle: true,
+              )
+            : null,
         body: SafeArea(
           child: IndexedStack(index: state, children: _pages),
         ),
-        bottomNavigationBar: Theme(
-          data: Theme.of(context).copyWith(
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: AppColors.primary,
-            selectedItemColor: AppColors.textSelectedColor,
-            unselectedItemColor: AppColors.textUnselectedColor,
-            selectedFontSize: 10,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-            unselectedFontSize: 10,
-            unselectedLabelStyle: TextStyle(
-              color: AppColors.textUnselectedColor,
-              fontWeight: FontWeight.w400,
-            ),
-            currentIndex: state,
-            onTap: (index) {
-              context.read<HomeCubit>().changeIndex(index);
-            },
-            type: BottomNavigationBarType.fixed,
-            items: _pagesIcon
-                .mapIndexed(
-                  (index, icon) => BottomNavigationBarItem(
-                    icon: _navBarIcon(icon, index, state),
-                    label: tabs[index].title ?? 'Page ${index + 1}',
+        bottomNavigationBar: _isBottomBarVisible
+            ? Theme(
+                data: Theme.of(context).copyWith(
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
+                ),
+                child: BottomNavigationBar(
+                  backgroundColor: AppColors.primary,
+                  selectedItemColor: AppColors.textSelectedColor,
+                  unselectedItemColor: AppColors.textUnselectedColor,
+                  selectedFontSize: 10,
+                  selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+                  unselectedFontSize: 10,
+                  unselectedLabelStyle: TextStyle(
+                    color: AppColors.textUnselectedColor,
+                    fontWeight: FontWeight.w400,
                   ),
-                )
-                .toList(),
-          ),
-        ),
+                  currentIndex: state,
+                  onTap: (index) {
+                    context.read<HomeCubit>().changeIndex(index);
+                  },
+                  type: BottomNavigationBarType.fixed,
+                  items: _pagesIcon
+                      .mapIndexed(
+                        (index, icon) => BottomNavigationBarItem(
+                          icon: _navBarIcon(icon, index, state),
+                          label: tabs[index].title ?? 'Page ${index + 1}',
+                        ),
+                      )
+                      .toList(),
+                ),
+              )
+            : null,
       ),
     );
   }
