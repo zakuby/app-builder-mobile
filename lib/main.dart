@@ -35,6 +35,9 @@ void main() async {
     runZonedGuarded(
       () async {
         WidgetsFlutterBinding.ensureInitialized();
+        
+          // Initialize dependency injection
+          await initializeDependencies();
 
         try {
           // Initialize Firebase
@@ -48,8 +51,6 @@ void main() async {
           await FCMService().initialize();
           debugPrint('FCM Service initialized successfully');
 
-          // Initialize dependency injection
-          await initializeDependencies();
 
           runApp(const MyApp());
         } catch (e, stack) {
