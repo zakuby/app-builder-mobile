@@ -21,35 +21,61 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final List<GlobalKey<CustomWebViewState>> _webViewKeys;
   late final List<Widget> _pages;
   late final List<IconData> _pagesIcon;
   bool _isBottomBarVisible = true;
   bool _isNavigationBarVisible = false;
+
+  // Track navigation state and title for each tab
+  late List<bool> _canGoBack;
+  late List<String?> _pageTitles;
 
   @override
   void initState() {
     super.initState();
     final tabs = AppUtil.config.urls?.tabs ?? [];
 
-    // Generate pages from config tabs
-    // HomeWebViewMessageHandler extends DefaultWebViewMessageHandler with bar visibility actions
-    _pages = tabs
-        .map((tab) => CustomWebView(
-              url: tab.url ?? "",
-              messageHandler: HomeWebViewMessageHandler(
-                onLogout: _handleLogout,
-                onHideBottomBar: _hideBottomBar,
-                onShowBottomBar: _showBottomBar,
-                onShowNavigationBar: _showNavigationBar,
-                onHideNavigationBar: _hideNavigationBar,
-              ),
-            ))
-        .toList();
+    // Initialize navigation state tracking
+    _canGoBack = List.filled(tabs.length, false);
+    _pageTitles = List.filled(tabs.length, null);
+
+    // Generate GlobalKeys for each WebView
+    _webViewKeys = List.generate(
+      tabs.length,
+      (_) => GlobalKey<CustomWebViewState>(),
+    );
+
+    // Generate pages from config tabs with navigation callbacks
+    _pages = tabs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final tab = entry.value;
+      return CustomWebView(
+        key: _webViewKeys[index],
+        url: tab.url ?? "",
+        messageHandler: HomeWebViewMessageHandler(
+          onLogout: _handleLogout,
+          onHideBottomBar: _hideBottomBar,
+          onShowBottomBar: _showBottomBar,
+          onShowNavigationBar: _showNavigationBar, // Deprecated: use enableAppBar in config
+          onHideNavigationBar: _hideNavigationBar, // Deprecated: use enableAppBar in config
+          onShowToast: _showToast,
+        ),
+        onNavigationStateChanged: (canGoBack) {
+          setState(() {
+            _canGoBack[index] = canGoBack;
+          });
+        },
+        onTitleChanged: (title) {
+          setState(() {
+            _pageTitles[index] = title;
+          });
+        },
+      );
+    }).toList();
 
     // Generate icons from config tabs using IconMapper
-    _pagesIcon = tabs
-        .map((tab) => IconMapper.getIcon(tab.icon))
-        .toList();
+    _pagesIcon = tabs.map((tab) => IconMapper.getIcon(tab.icon)).toList();
   }
 
   void _hideBottomBar() {
@@ -76,6 +102,19 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _showToast(String message, String duration) {
+    final snackBarDuration =
+        duration == 'long' ? const Duration(seconds: 4) : const Duration(seconds: 2);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: snackBarDuration,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _handleLogout() {
     debugPrint('Logout triggered, navigating to auth page');
 
@@ -83,7 +122,8 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => BlocProvider(
-          create: (context) => AuthCubit(authRepository: getIt<AuthRepository>()),
+          create: (context) =>
+              AuthCubit(authRepository: getIt<AuthRepository>()),
           child: const AuthPage(),
         ),
       ),
@@ -91,63 +131,95 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _handleBackPressed(int currentTabIndex) {
+    final webViewKey = _webViewKeys[currentTabIndex];
+    webViewKey.currentState?.goBack();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabs = AppUtil.config.urls?.tabs ?? [];
+    final enableAppBar = AppUtil.config.enableAppBar;
 
     return BlocBuilder<HomeCubit, int>(
-      builder: (context, state) => Scaffold(
-        appBar: _isNavigationBarVisible
-            ? AppBar(
-                backgroundColor: AppColors.primary,
-                title: Text(widget.title, style: TextStyle(color: AppColors.textColor)),
-                centerTitle: true,
-              )
-            : null,
-        body: SafeArea(
-          child: IndexedStack(index: state, children: _pages),
-        ),
-        bottomNavigationBar: _isBottomBarVisible
-            ? Theme(
-                data: Theme.of(context).copyWith(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  hoverColor: Colors.transparent,
-                ),
-                child: BottomNavigationBar(
+      builder: (context, currentTabIndex) {
+        final canGoBack =
+            currentTabIndex < _canGoBack.length && _canGoBack[currentTabIndex];
+        final currentTitle = currentTabIndex < _pageTitles.length
+            ? _pageTitles[currentTabIndex]
+            : null;
+
+        return Scaffold(
+          backgroundColor: AppColors.primary,
+          appBar: enableAppBar && _isNavigationBarVisible
+              ? AppBar(
                   backgroundColor: AppColors.primary,
-                  selectedItemColor: AppColors.textSelectedColor,
-                  unselectedItemColor: AppColors.textUnselectedColor,
-                  selectedFontSize: 10,
-                  selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  unselectedFontSize: 10,
-                  unselectedLabelStyle: TextStyle(
-                    color: AppColors.textUnselectedColor,
-                    fontWeight: FontWeight.w400,
+                  leading: canGoBack
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: AppColors.textColor,
+                          ),
+                          onPressed: () => _handleBackPressed(currentTabIndex),
+                        )
+                      : null,
+                  automaticallyImplyLeading: false,
+                  title: Text(
+                    currentTitle ?? widget.title,
+                    style: TextStyle(color: AppColors.textColor),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  currentIndex: state,
-                  onTap: (index) {
-                    context.read<HomeCubit>().changeIndex(index);
-                  },
-                  type: BottomNavigationBarType.fixed,
-                  items: _pagesIcon
-                      .mapIndexed(
-                        (index, icon) => BottomNavigationBarItem(
-                          icon: _navBarIcon(icon, index, state),
-                          label: tabs[index].title ?? 'Page ${index + 1}',
-                        ),
-                      )
-                      .toList(),
-                ),
-              )
-            : null,
-      ),
+                  centerTitle: true,
+                )
+              : null,
+          body: SafeArea(
+            child: IndexedStack(index: currentTabIndex, children: _pages),
+          ),
+          bottomNavigationBar: _isBottomBarVisible && tabs.length > 1
+              ? Theme(
+                  data: Theme.of(context).copyWith(
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    hoverColor: Colors.transparent,
+                  ),
+                  child: BottomNavigationBar(
+                    backgroundColor: AppColors.primary,
+                    selectedItemColor: AppColors.textSelectedColor,
+                    unselectedItemColor: AppColors.textUnselectedColor,
+                    selectedFontSize: 10,
+                    selectedLabelStyle:
+                        const TextStyle(fontWeight: FontWeight.w700),
+                    unselectedFontSize: 10,
+                    unselectedLabelStyle: TextStyle(
+                      color: AppColors.textUnselectedColor,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    currentIndex: currentTabIndex,
+                    onTap: (index) {
+                      context.read<HomeCubit>().changeIndex(index);
+                    },
+                    type: BottomNavigationBarType.fixed,
+                    items: _pagesIcon
+                        .mapIndexed(
+                          (index, icon) => BottomNavigationBarItem(
+                            icon: _navBarIcon(icon, index, currentTabIndex),
+                            label: tabs[index].title ?? 'Page ${index + 1}',
+                          ),
+                        )
+                        .toList(),
+                  ),
+                )
+              : null,
+        );
+      },
     );
   }
 
   Widget _navBarIcon(IconData icon, int index, int currentIndex) => Icon(
-    icon,
-    size: 24,
-    color: index == currentIndex ? AppColors.textSelectedColor : AppColors.textUnselectedColor,
-  );
+        icon,
+        size: 24,
+        color: index == currentIndex
+            ? AppColors.textSelectedColor
+            : AppColors.textUnselectedColor,
+      );
 }

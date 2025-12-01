@@ -1,5 +1,5 @@
-import 'package:app_builder_mobile/presentation/webview/default_web_view_message_handler.dart';
 import 'package:app_builder_mobile/presentation/webview/web_view_message_handler.dart';
+import 'package:app_builder_mobile/util/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -24,26 +24,41 @@ class CustomWebView extends StatefulWidget {
   final String url;
   final WebViewMessageHandler messageHandler;
   final String channelName;
+  final void Function(bool canGoBack)? onNavigationStateChanged;
+  final void Function(String? title)? onTitleChanged;
 
   const CustomWebView({
     super.key,
     required this.url,
     required this.messageHandler,
     this.channelName = 'AppBuilderChannel',
+    this.onNavigationStateChanged,
+    this.onTitleChanged,
   });
 
   @override
-  State<CustomWebView> createState() => _CustomWebViewState();
+  State<CustomWebView> createState() => CustomWebViewState();
 }
 
-class _CustomWebViewState extends State<CustomWebView> {
+class CustomWebViewState extends State<CustomWebView> {
   late final WebViewController _controller;
+  bool _isLoading = true;
+
+  /// Expose controller for external navigation control
+  WebViewController get controller => _controller;
 
   @override
   void initState() {
     super.initState();
     // Use provided handler or keep it null (will be set by parent if needed)
     _initializeWebView();
+  }
+
+  /// Go back in WebView history
+  Future<void> goBack() async {
+    if (await _controller.canGoBack()) {
+      await _controller.goBack();
+    }
   }
 
   /// Initialize WebView with JavaScript channel
@@ -56,6 +71,32 @@ class _CustomWebViewState extends State<CustomWebView> {
       ..addJavaScriptChannel(
         widget.channelName,
         onMessageReceived: _handleMessageFromWeb,
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
+          },
+          onPageFinished: (url) async {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+
+            // Check navigation state
+            final canGoBack = await _controller.canGoBack();
+            widget.onNavigationStateChanged?.call(canGoBack);
+
+            // Get page title
+            final title = await _controller.getTitle();
+            widget.onTitleChanged?.call(title);
+          },
+        ),
       )
       ..loadRequest(Uri.parse(widget.url));
 
@@ -84,6 +125,19 @@ class _CustomWebViewState extends State<CustomWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller);
+    return Stack(
+      children: [
+        WebViewWidget(controller: _controller),
+        if (_isLoading)
+          Container(
+            color: AppColors.primary,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.secondary,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

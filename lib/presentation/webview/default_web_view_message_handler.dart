@@ -5,6 +5,7 @@ import 'package:app_builder_mobile/presentation/webview/web_view_message_handler
 import 'package:app_builder_mobile/services/fcm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
 /// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN
@@ -48,6 +49,9 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'GENERATE_FCM_TOKEN':
           await _handleGenerateFcmToken(callbackId);
+          break;
+        case 'SHARE':
+          await _handleShare(data, callbackId);
           break;
         default:
           debugPrint('Unknown action: $action');
@@ -239,6 +243,52 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling GENERATE_FCM_TOKEN: $e');
       sendCallback(callbackId, false, 'Error retrieving FCM token: $e');
+    }
+  }
+
+  /// Handle SHARE action from web
+  /// Opens native share dialog with text and optional URL
+  Future<void> _handleShare(
+    Map<String, dynamic> message,
+    String? callbackId,
+  ) async {
+    try {
+      final messageData = message['data'] as Map<String, dynamic>?;
+      if (messageData == null) {
+        sendCallback(callbackId, false, 'No data provided');
+        return;
+      }
+
+      final text = messageData['text'] as String? ?? '';
+      final url = messageData['url'] as String? ?? '';
+
+      // Combine text and URL for sharing
+      final shareContent = url.isNotEmpty ? '$text\n$url' : text;
+
+      if (shareContent.isEmpty) {
+        sendCallback(callbackId, false, 'No content to share');
+        return;
+      }
+
+      debugPrint('Sharing content: $shareContent');
+
+      final result = await Share.share(shareContent);
+
+      // Check if share was successful
+      if (result.status == ShareResultStatus.success) {
+        sendCallback(callbackId, true, 'Content shared successfully', {
+          'shared': true,
+        });
+      } else if (result.status == ShareResultStatus.dismissed) {
+        sendCallback(callbackId, true, 'Share dismissed', {
+          'shared': false,
+        });
+      } else {
+        sendCallback(callbackId, false, 'Share failed');
+      }
+    } catch (e) {
+      debugPrint('Error handling SHARE: $e');
+      sendCallback(callbackId, false, 'Error sharing: $e');
     }
   }
 }

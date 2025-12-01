@@ -15,7 +15,8 @@
       "Bash(/mnt/c/Users/zakub/flutter/bin/flutter analyze:*)",
       "Bash(where.exe:*)",
       "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter analyze:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter pub:*)"
     ],
     "deny": [],
     "ask": []
