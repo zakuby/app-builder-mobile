@@ -2,11 +2,12 @@ import 'package:app_builder_mobile/core/di/injection.dart';
 import 'package:app_builder_mobile/data/datasources/device_info_datasource.dart';
 import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
 import 'package:app_builder_mobile/presentation/webview/web_view_message_handler.dart';
+import 'package:app_builder_mobile/services/fcm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
-/// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION
+/// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   final DeviceInfoDataSource _deviceInfoDataSource =
@@ -44,6 +45,9 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'GET_APP_VERSION':
           await _handleGetAppVersion(callbackId);
+          break;
+        case 'GENERATE_FCM_TOKEN':
+          await _handleGenerateFcmToken(callbackId);
           break;
         default:
           debugPrint('Unknown action: $action');
@@ -153,6 +157,10 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
       await _authRepository.logout();
       debugPrint('User logged out successfully');
 
+      // Regenerate FCM token to invalidate the old one
+      await FCMService().regenerateToken();
+      debugPrint('FCM token regenerated after logout');
+
       sendCallback(callbackId, true, 'Logged out successfully');
 
       // Navigate to auth page after logout
@@ -202,6 +210,35 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling GET_APP_VERSION: $e');
       sendCallback(callbackId, false, 'Error retrieving app version: $e');
+    }
+  }
+
+  /// Handle GENERATE_FCM_TOKEN action from web
+  /// Returns the FCM token from secure storage
+  Future<void> _handleGenerateFcmToken(String? callbackId) async {
+    try {
+      // First try to get token from secure storage
+      String? token = await FCMService().getTokenFromSecureStorage();
+
+      // If not in storage, get from FCMService memory
+      token ??= FCMService().fcmToken;
+
+      if (token == null) {
+        sendCallback(callbackId, false, 'FCM token not available');
+        return;
+      }
+
+      debugPrint('Retrieved FCM token: $token');
+
+      sendCallback(
+        callbackId,
+        true,
+        'FCM token retrieved successfully',
+        {'token': token},
+      );
+    } catch (e) {
+      debugPrint('Error handling GENERATE_FCM_TOKEN: $e');
+      sendCallback(callbackId, false, 'Error retrieving FCM token: $e');
     }
   }
 }

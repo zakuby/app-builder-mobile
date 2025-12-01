@@ -6,7 +6,16 @@
       "WebFetch(domain:github.com)",
       "Bash(flutter analyze:*)",
       "Bash(dart run build_runner:*)",
-      "Bash(flutter pub run build_runner build:*)"
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(cat:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore:*)",
+      "Bash(git update-index:*)",
+      "Bash(/usr/bin/flutter analyze:*)",
+      "Bash(/mnt/c/Users/zakub/flutter/bin/flutter analyze:*)",
+      "Bash(where.exe:*)",
+      "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter analyze:*)",
+      "Bash(dart analyze:*)"
     ],
     "deny": [],
     "ask": []

@@ -221,10 +221,84 @@ lib/
 │       ├── custom_web_view.dart
 │       ├── web_view_message_handler.dart
 │       └── default_web_view_message_handler.dart
+├── services/                    # Services layer
+│   └── fcm_service.dart        # Firebase Cloud Messaging service
 ├── util/                        # Utilities
 │   ├── app_util.dart           # Config parsing and access
 │   └── app_colors.dart         # Centralized color management
 └── main.dart                    # App entry point
+```
+
+### Firebase Cloud Messaging (FCM) - Android Only
+The app integrates Firebase Cloud Messaging for push notifications on Android with dynamic `google-services.json` setup for CI/CD.
+
+**Key Features:**
+- Simple configuration retrieval from AWS Parameter Store or S3
+- Background and foreground notification handling
+- Local notifications with custom channels (Android 8+)
+- Topic subscription/unsubscription support
+- Automatic token management and refresh handling
+
+**Architecture:**
+- `FCMService` singleton in `lib/services/fcm_service.dart` handles all FCM operations
+- Initialized in `main.dart` before app starts
+- Background message handler (`firebaseMessagingBackgroundHandler`) runs in isolate
+- Uses `flutter_local_notifications` for displaying notifications when app is in foreground
+
+**Configuration:**
+- For local dev: Place `google-services.json` in `android/app/`
+- For CodeBuild: Store in Parameter Store or S3, copy with a simple command in pre_build phase
+- File is ignored by git for security
+
+**Usage:**
+```dart
+// Get FCM token (for sending to your backend)
+String? token = FCMService().fcmToken;
+
+// Subscribe to topic
+await FCMService().subscribeToTopic('news');
+
+// Unsubscribe from topic
+await FCMService().unsubscribeFromTopic('news');
+
+// Delete token (e.g., on logout)
+await FCMService().deleteToken();
+```
+
+### Firebase Cloud Messaging (FCM) - Android Only
+The app integrates Firebase Cloud Messaging for push notifications on Android with dynamic `google-services.json` setup for CI/CD.
+
+**Key Features:**
+- Simple configuration retrieval from AWS Parameter Store or S3
+- Background and foreground notification handling
+- Local notifications with custom channels (Android 8+)
+- Topic subscription/unsubscription support
+- Automatic token management and refresh handling
+
+**Architecture:**
+- `FCMService` singleton in `lib/services/fcm_service.dart` handles all FCM operations
+- Initialized in `main.dart` before app starts
+- Background message handler (`firebaseMessagingBackgroundHandler`) runs in isolate
+- Uses `flutter_local_notifications` for displaying notifications when app is in foreground
+
+**Configuration:**
+- For local dev: Place `google-services.json` in `android/app/`
+- For CodeBuild: Store in Parameter Store or S3, copy with a simple command in pre_build phase
+- File is ignored by git for security
+
+**Usage:**
+```dart
+// Get FCM token (for sending to your backend)
+String? token = FCMService().fcmToken;
+
+// Subscribe to topic
+await FCMService().subscribeToTopic('news');
+
+// Unsubscribe from topic
+await FCMService().unsubscribeFromTopic('news');
+
+// Delete token (e.g., on logout)
+await FCMService().deleteToken();
 ```
 
 ## Key Dependencies
@@ -240,6 +314,12 @@ lib/
 - `json_annotation: ^4.9.0` - JSON serialization annotations
 - `collection: ^1.19.1` - Collection utilities
 - `cupertino_icons: ^1.0.8` - iOS-style icons
+- `firebase_core: ^3.10.1` - Firebase core SDK
+- `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
+- `flutter_local_notifications: ^18.0.1` - Local notifications display
+- `firebase_core: ^3.10.1` - Firebase core SDK
+- `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
+- `flutter_local_notifications: ^18.0.1` - Local notifications display
 
 ### Development
 - `build_runner: ^2.4.15` - Code generation runner
@@ -330,6 +410,50 @@ lib/
 
 **Note:** Cubits should NOT be registered in GetIt - use BlocProvider for proper lifecycle management
 
+### Setting Up Firebase for Local Development (Android)
+
+1. Download `google-services.json` from Firebase Console (Project Settings → General → Your apps → Android app)
+2. Place it in `android/app/google-services.json`
+3. Run the app:
+   ```bash
+   flutter run --dart-define-from-file=lib/config/test_config.json
+   ```
+   
+### Testing Push Notifications
+
+#### Get FCM Token
+Add this to your app to print the FCM token:
+```dart
+// In your UI somewhere (e.g., a debug screen)
+Text('FCM Token: ${FCMService().fcmToken ?? "Loading..."}')
+```
+
+#### Send Test Notification via Firebase Console
+1. Go to Firebase Console → Cloud Messaging
+2. Click "Send your first message"
+3. Enter notification title and text
+4. Click "Send test message"
+5. Paste your FCM token
+6. Click "Test"
+
+#### Send Test Notification via API
+```bash
+# Get your Server Key from Firebase Console → Project Settings → Cloud Messaging
+curl -X POST https://fcm.googleapis.com/fcm/send \
+  -H "Authorization: key=YOUR_SERVER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "DEVICE_FCM_TOKEN",
+    "notification": {
+      "title": "Test Notification",
+      "body": "This is a test message"
+    },
+    "data": {
+      "custom_key": "custom_value"
+    }
+  }'
+```
+
 ## Troubleshooting
 
 ### Build Runner Issues
@@ -352,3 +476,123 @@ dart run build_runner build --delete-conflicting-outputs
 - Check URL in configuration is valid and accessible
 - Verify JavaScript is enabled
 - Check device/emulator has internet connection
+
+### Firebase/FCM Issues (Android)
+
+#### google-services.json Not Found
+```bash
+# Verify the file exists
+ls -la android/app/google-services.json
+
+# Download from Firebase Console and place in android/app/
+```
+
+#### Firebase Initialization Failed
+- Ensure `google-services.json` is in `android/app/` directory
+- Verify the file has valid JSON content (not corrupted)
+- Check that package name in `google-services.json` matches `applicationId` in `android/app/build.gradle.kts`
+- Ensure `com.google.gms.google-services` plugin is applied (already configured)
+- Try cleaning and rebuilding:
+  ```bash
+  flutter clean
+  flutter pub get
+  flutter run --dart-define-from-file=lib/config/test_config.json
+  ```
+
+#### Notifications Not Appearing
+- **Android 13+:** Check notification permissions are granted (runtime permission required)
+- Verify notification channel is created (done automatically in `FCMService`)
+- Test with Firebase Console test message first
+- Check logs for FCM token: look for `FCM Token:` in console output
+- Ensure app is not in battery optimization/power saving mode
+- Verify Google Play Services is installed and up to date on device
+
+#### FCM Token is Null
+- Wait a few seconds after app launch (token retrieval is async)
+- Check internet connection
+- Look for "Firebase initialized successfully" in console logs
+- Ensure Google Play Services is available on the device
+- Try restarting the app
+
+#### Background Messages Not Working
+- Verify `firebaseMessagingBackgroundHandler` is registered in `main.dart:38`
+- Handler must be a top-level function (already implemented correctly)
+- `Firebase.initializeApp()` is called in background handler (already done)
+- Test by sending notification when app is fully closed (not just backgrounded)
+- Check notification payload includes both `notification` and `data` fields
+
+#### CodeBuild Issues
+- Verify environment variable is set in CodeBuild project
+- Check IAM role permissions:
+  - Parameter Store: `ssm:GetParameter` and `ssm:GetParameters`
+  - S3: `s3:GetObject` on the specific bucket/key
+- Verify the file is created during build:
+  ```yaml
+  # Add to buildspec.yml pre_build commands for debugging:
+  - ls -la android/app/google-services.json
+  - head -n 5 android/app/google-services.json  # Check first few lines
+  ```
+- Common issues:
+  - Parameter name mismatch between Parameter Store and buildspec
+  - JSON content has extra quotes or escaping
+  - File permissions prevent writing to android/app/ directory
+
+### Firebase/FCM Issues (Android)
+
+#### google-services.json Not Found
+```bash
+# Verify the file exists
+ls -la android/app/google-services.json
+
+# Download from Firebase Console and place in android/app/
+```
+
+#### Firebase Initialization Failed
+- Ensure `google-services.json` is in `android/app/` directory
+- Verify the file has valid JSON content (not corrupted)
+- Check that package name in `google-services.json` matches `applicationId` in `android/app/build.gradle.kts`
+- Ensure `com.google.gms.google-services` plugin is applied (already configured)
+- Try cleaning and rebuilding:
+  ```bash
+  flutter clean
+  flutter pub get
+  flutter run --dart-define-from-file=lib/config/test_config.json
+  ```
+
+#### Notifications Not Appearing
+- **Android 13+:** Check notification permissions are granted (runtime permission required)
+- Verify notification channel is created (done automatically in `FCMService`)
+- Test with Firebase Console test message first
+- Check logs for FCM token: look for `FCM Token:` in console output
+- Ensure app is not in battery optimization/power saving mode
+- Verify Google Play Services is installed and up to date on device
+
+#### FCM Token is Null
+- Wait a few seconds after app launch (token retrieval is async)
+- Check internet connection
+- Look for "Firebase initialized successfully" in console logs
+- Ensure Google Play Services is available on the device
+- Try restarting the app
+
+#### Background Messages Not Working
+- Verify `firebaseMessagingBackgroundHandler` is registered in `main.dart:38`
+- Handler must be a top-level function (already implemented correctly)
+- `Firebase.initializeApp()` is called in background handler (already done)
+- Test by sending notification when app is fully closed (not just backgrounded)
+- Check notification payload includes both `notification` and `data` fields
+
+#### CodeBuild Issues
+- Verify environment variable is set in CodeBuild project
+- Check IAM role permissions:
+  - Parameter Store: `ssm:GetParameter` and `ssm:GetParameters`
+  - S3: `s3:GetObject` on the specific bucket/key
+- Verify the file is created during build:
+  ```yaml
+  # Add to buildspec.yml pre_build commands for debugging:
+  - ls -la android/app/google-services.json
+  - head -n 5 android/app/google-services.json  # Check first few lines
+  ```
+- Common issues:
+  - Parameter name mismatch between Parameter Store and buildspec
+  - JSON content has extra quotes or escaping
+  - File permissions prevent writing to android/app/ directory
