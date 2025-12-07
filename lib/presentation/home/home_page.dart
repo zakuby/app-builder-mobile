@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
   late final List<Widget> _pages;
   late final List<IconData> _pagesIcon;
   bool _isBottomBarVisible = true;
-  bool _isNavigationBarVisible = false;
+  bool _isNavigationBarVisible = AppUtil.config.enableAppBar ?? false;
 
   // Track navigation state and title for each tab
   late List<bool> _canGoBack;
@@ -139,7 +139,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final tabs = AppUtil.config.urls?.tabs ?? [];
-    final enableAppBar = AppUtil.config.enableAppBar;
 
     return BlocBuilder<HomeCubit, int>(
       builder: (context, currentTabIndex) {
@@ -151,7 +150,7 @@ class _HomePageState extends State<HomePage> {
 
         return Scaffold(
           backgroundColor: AppColors.primary,
-          appBar: enableAppBar && _isNavigationBarVisible
+          appBar: _isNavigationBarVisible
               ? AppBar(
                   backgroundColor: AppColors.primary,
                   leading: canGoBack
@@ -166,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                   automaticallyImplyLeading: false,
                   title: Text(
                     currentTitle ?? widget.title,
-                    style: TextStyle(color: AppColors.textColor),
+                    style: TextStyle(color: AppColors.textSelectedColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                   centerTitle: true,

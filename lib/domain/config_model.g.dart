@@ -16,6 +16,7 @@ _AppConfig _$AppConfigFromJson(Map<String, dynamic> json) => _AppConfig(
   platform: json['platform'] as String?,
   buildType: json['build_type'] as String?,
   environment: json['environment'] as String?,
+  enableAppBar: json['enable_app_bar'] as bool? ?? false,
   styles: json['styles'] == null
       ? null
       : Styles.fromJson(json['styles'] as Map<String, dynamic>),
@@ -35,6 +36,7 @@ Map<String, dynamic> _$AppConfigToJson(_AppConfig instance) =>
       'platform': instance.platform,
       'build_type': instance.buildType,
       'environment': instance.environment,
+      'enable_app_bar': instance.enableAppBar,
       'styles': instance.styles?.toJson(),
       'urls': instance.urls?.toJson(),
     };

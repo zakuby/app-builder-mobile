@@ -19,7 +19,7 @@ abstract class ConfigModel with _$ConfigModel {
     String? platform,
     String? buildType,
     String? environment,
-    @Default(false) bool enableAppBar,
+    @Default(false) bool? enableAppBar,
     Styles? styles,
     Urls? urls,
   }) = _AppConfig;
