@@ -1205,7 +1205,7 @@ as List<TabItem>?,
 /// @nodoc
 mixin _$TabItem {
 
- String? get title; String? get url; String? get icon;
+ String? get title; String? get url; String? get iconId;
 /// Create a copy of TabItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1218,16 +1218,16 @@ $TabItemCopyWith<TabItem> get copyWith => _$TabItemCopyWithImpl<TabItem>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabItem&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.icon, icon) || other.icon == icon));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabItem&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.iconId, iconId) || other.iconId == iconId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,title,url,icon);
+int get hashCode => Object.hash(runtimeType,title,url,iconId);
 
 @override
 String toString() {
-  return 'TabItem(title: $title, url: $url, icon: $icon)';
+  return 'TabItem(title: $title, url: $url, iconId: $iconId)';
 }
 
 
@@ -1238,7 +1238,7 @@ abstract mixin class $TabItemCopyWith<$Res>  {
   factory $TabItemCopyWith(TabItem value, $Res Function(TabItem) _then) = _$TabItemCopyWithImpl;
 @useResult
 $Res call({
- String? title, String? url, String? icon
+ String? title, String? url, String? iconId
 });
 
 
@@ -1255,11 +1255,11 @@ class _$TabItemCopyWithImpl<$Res>
 
 /// Create a copy of TabItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? url = freezed,Object? icon = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? url = freezed,Object? iconId = freezed,}) {
   return _then(_self.copyWith(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String?,icon: freezed == icon ? _self.icon : icon // ignore: cast_nullable_to_non_nullable
+as String?,iconId: freezed == iconId ? _self.iconId : iconId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1345,10 +1345,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? url,  String? icon)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? url,  String? iconId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TabItem() when $default != null:
-return $default(_that.title,_that.url,_that.icon);case _:
+return $default(_that.title,_that.url,_that.iconId);case _:
   return orElse();
 
 }
@@ -1366,10 +1366,10 @@ return $default(_that.title,_that.url,_that.icon);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? url,  String? icon)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? url,  String? iconId)  $default,) {final _that = this;
 switch (_that) {
 case _TabItem():
-return $default(_that.title,_that.url,_that.icon);case _:
+return $default(_that.title,_that.url,_that.iconId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1386,10 +1386,10 @@ return $default(_that.title,_that.url,_that.icon);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? url,  String? icon)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? url,  String? iconId)?  $default,) {final _that = this;
 switch (_that) {
 case _TabItem() when $default != null:
-return $default(_that.title,_that.url,_that.icon);case _:
+return $default(_that.title,_that.url,_that.iconId);case _:
   return null;
 
 }
@@ -1401,12 +1401,12 @@ return $default(_that.title,_that.url,_that.icon);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
 class _TabItem implements TabItem {
-  const _TabItem({this.title, this.url, this.icon});
+  const _TabItem({this.title, this.url, this.iconId});
   factory _TabItem.fromJson(Map<String, dynamic> json) => _$TabItemFromJson(json);
 
 @override final  String? title;
 @override final  String? url;
-@override final  String? icon;
+@override final  String? iconId;
 
 /// Create a copy of TabItem
 /// with the given fields replaced by the non-null parameter values.
@@ -1421,16 +1421,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TabItem&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.icon, icon) || other.icon == icon));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TabItem&&(identical(other.title, title) || other.title == title)&&(identical(other.url, url) || other.url == url)&&(identical(other.iconId, iconId) || other.iconId == iconId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,title,url,icon);
+int get hashCode => Object.hash(runtimeType,title,url,iconId);
 
 @override
 String toString() {
-  return 'TabItem(title: $title, url: $url, icon: $icon)';
+  return 'TabItem(title: $title, url: $url, iconId: $iconId)';
 }
 
 
@@ -1441,7 +1441,7 @@ abstract mixin class _$TabItemCopyWith<$Res> implements $TabItemCopyWith<$Res> {
   factory _$TabItemCopyWith(_TabItem value, $Res Function(_TabItem) _then) = __$TabItemCopyWithImpl;
 @override @useResult
 $Res call({
- String? title, String? url, String? icon
+ String? title, String? url, String? iconId
 });
 
 
@@ -1458,11 +1458,11 @@ class __$TabItemCopyWithImpl<$Res>
 
 /// Create a copy of TabItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? url = freezed,Object? icon = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? url = freezed,Object? iconId = freezed,}) {
   return _then(_TabItem(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String?,icon: freezed == icon ? _self.icon : icon // ignore: cast_nullable_to_non_nullable
+as String?,iconId: freezed == iconId ? _self.iconId : iconId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

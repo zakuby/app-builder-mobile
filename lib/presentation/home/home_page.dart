@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
     }).toList();
 
     // Generate icons from config tabs using IconMapper
-    _pagesIcon = tabs.map((tab) => IconMapper.getIcon(tab.icon)).toList();
+    _pagesIcon = tabs.map((tab) => IconMapper.getIcon(tab.iconId)).toList();
   }
 
   void _hideBottomBar() {

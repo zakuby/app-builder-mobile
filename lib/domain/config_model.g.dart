@@ -92,11 +92,11 @@ Map<String, dynamic> _$UrlsToJson(_Urls instance) => <String, dynamic>{
 _TabItem _$TabItemFromJson(Map<String, dynamic> json) => _TabItem(
   title: json['title'] as String?,
   url: json['url'] as String?,
-  icon: json['icon'] as String?,
+  iconId: json['icon_id'] as String?,
 );
 
 Map<String, dynamic> _$TabItemToJson(_TabItem instance) => <String, dynamic>{
   'title': instance.title,
   'url': instance.url,
-  'icon': instance.icon,
+  'icon_id': instance.iconId,
 };

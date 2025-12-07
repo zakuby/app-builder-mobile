@@ -16,7 +16,9 @@
       "Bash(where.exe:*)",
       "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter analyze:*)",
       "Bash(dart analyze:*)",
-      "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter pub:*)"
+      "Bash(/mnt/c/Users/zakub/Projects/flutter/bin/flutter pub:*)",
+      "Bash(cmd.exe /c \"flutter pub run build_runner build --delete-conflicting-outputs\")",
+      "Bash(cmd.exe /c \"flutter analyze\")"
     ],
     "deny": [],
     "ask": []

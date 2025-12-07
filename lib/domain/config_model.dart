@@ -63,7 +63,7 @@ abstract class Urls with _$Urls {
 @freezed
 abstract class TabItem with _$TabItem {
   @JsonSerializable(fieldRename: FieldRename.snake, explicitToJson: true)
-  const factory TabItem({String? title, String? url, String? icon}) = _TabItem;
+  const factory TabItem({String? title, String? url, String? iconId}) = _TabItem;
 
   factory TabItem.fromJson(Map<String, dynamic> json) =>
       _$TabItemFromJson(json);
