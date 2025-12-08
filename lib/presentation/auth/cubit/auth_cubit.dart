@@ -8,8 +8,8 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
 
   AuthCubit({required AuthRepository authRepository})
-      : _authRepository = authRepository,
-        super(const AuthState.initial());
+    : _authRepository = authRepository,
+      super(const AuthState.initial());
 
   /// Check if user is logged in
   Future<void> checkAuthStatus() async {
@@ -32,11 +32,10 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Save user data (login)
-  Future<void> login(Map<String, dynamic> userData) async {
+  Future<void> login() async {
     try {
       emit(const AuthState.loading());
-
-      await _authRepository.saveUserData(userData);
+      final userData = await _authRepository.getUserData();
       emit(AuthState.authenticated(userData: userData));
     } catch (e) {
       debugPrint('Error during login: $e');

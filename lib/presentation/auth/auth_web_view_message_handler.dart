@@ -83,8 +83,7 @@ class AuthWebViewMessageHandler extends DefaultWebViewMessageHandler {
   /// Handle legacy login_success and auth_success actions
   Future<void> _handleLoginSuccess(Map<String, dynamic> data) async {
     try {
-      final userData = data['user'] as Map<String, dynamic>? ?? data;
-      await authCubit.login(userData);
+      await authCubit.login();
       onLoginSuccess?.call();
     } catch (e) {
       debugPrint('Error handling login success: $e');
