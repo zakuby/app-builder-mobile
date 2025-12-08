@@ -68,12 +68,6 @@ class AuthWebViewMessageHandler extends DefaultWebViewMessageHandler {
 
       // Send success callback
       sendCallback(callbackId, true, 'Data saved successfully');
-
-      // If the key is 'user', trigger login success
-      if (key == 'user') {
-        await Future.delayed(const Duration(milliseconds: 100));
-        onLoginSuccess?.call();
-      }
     } catch (e) {
       debugPrint('Error handling SAVE_SECURE in auth: $e');
       sendCallback(callbackId, false, 'Error saving data: $e');
