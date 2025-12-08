@@ -30,6 +30,7 @@ class AuthWebViewMessageHandler extends DefaultWebViewMessageHandler {
           break;
         case 'login_success':
         case 'auth_success':
+        case 'AUTH_SUCCESS':
           await _handleLoginSuccess(data);
           break;
         default:
