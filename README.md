@@ -264,12 +264,13 @@ Default handler supports:
 - `GET_APP_VERSION` - Get app version and build number
 - `GENERATE_FCM_TOKEN` - Get Firebase Cloud Messaging token
 - `SHARE` - Open native share dialog
-- `TTS_SPEAK` - Speak text using text-to-speech
+- `TTS_SPEAK` - Speak text using text-to-speech (supports ttsId for tracking)
 - `TTS_CANCEL` - Cancel ongoing speech
 - `TTS_GET_LANGUAGES` - Get list of installed TTS languages
 - `TTS_IS_LANGUAGE_AVAILABLE` - Check if a language is available (cross-platform)
 - `TTS_IS_LANGUAGE_INSTALLED` - Check if a language is installed (Android only)
 - `TTS_OPEN_SETTINGS` - Open device settings for TTS language installation
+- `TTS_IS_COMPLETE` - Wait for speech completion (async callback when speech finishes)
 
 #### Custom Message Handler
 

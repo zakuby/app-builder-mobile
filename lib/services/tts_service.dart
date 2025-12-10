@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+/// Callback type for TTS completion notifications
+typedef TtsCompletionCallback = void Function(String ttsId, bool completed);
+
 /// Service for Text-to-Speech functionality
 /// Provides speak and cancel capabilities for WebView integration
 class TTSService {
@@ -11,6 +14,13 @@ class TTSService {
   FlutterTts? _flutterTts;
   bool _isInitialized = false;
   bool _isSpeaking = false;
+
+  /// Currently active ttsId being spoken
+  String? _currentTtsId;
+
+  /// Pending completion callbacks waiting for TTS to finish
+  /// Key: ttsId, Value: callback function
+  final Map<String, TtsCompletionCallback> _completionCallbacks = {};
 
   /// Initialize the TTS engine
   Future<void> initialize() async {
@@ -28,19 +38,28 @@ class TTSService {
       // Set up completion handler
       _flutterTts!.setCompletionHandler(() {
         _isSpeaking = false;
-        debugPrint('TTS: Speech completed');
+        debugPrint('TTS: Speech completed for ttsId: $_currentTtsId');
+        _notifyCompletion(completed: true);
       });
 
       // Set up error handler
       _flutterTts!.setErrorHandler((message) {
         _isSpeaking = false;
         debugPrint('TTS Error: $message');
+        _notifyCompletion(completed: false);
       });
 
       // Set up start handler
       _flutterTts!.setStartHandler(() {
         _isSpeaking = true;
-        debugPrint('TTS: Speech started');
+        debugPrint('TTS: Speech started for ttsId: $_currentTtsId');
+      });
+
+      // Set up cancel handler
+      _flutterTts!.setCancelHandler(() {
+        _isSpeaking = false;
+        debugPrint('TTS: Speech cancelled for ttsId: $_currentTtsId');
+        _notifyCompletion(completed: false);
       });
 
       _isInitialized = true;
@@ -51,9 +70,20 @@ class TTSService {
     }
   }
 
-  /// Speak the given text
+  /// Notify all pending completion callbacks for the current ttsId
+  void _notifyCompletion({required bool completed}) {
+    if (_currentTtsId != null && _completionCallbacks.containsKey(_currentTtsId)) {
+      final callback = _completionCallbacks.remove(_currentTtsId);
+      callback?.call(_currentTtsId!, completed);
+      debugPrint('TTS: Notified completion callback for ttsId: $_currentTtsId, completed: $completed');
+    }
+    _currentTtsId = null;
+  }
+
+  /// Speak the given text with optional ttsId for tracking
   /// Returns true if speech started successfully
-  Future<bool> speak(String text) async {
+  /// [ttsId] - Optional unique identifier for this speech request
+  Future<bool> speak(String text, {String? ttsId}) async {
     if (!_isInitialized) {
       await initialize();
     }
@@ -69,14 +99,34 @@ class TTSService {
         await stop();
       }
 
+      // Set the current ttsId for tracking
+      _currentTtsId = ttsId;
+
       final result = await _flutterTts!.speak(text);
-      debugPrint('TTS: Speaking text: "$text", result: $result');
+      debugPrint('TTS: Speaking text: "$text", ttsId: $ttsId, result: $result');
       return result == 1;
     } catch (e) {
       debugPrint('TTS speak error: $e');
+      _currentTtsId = null;
       return false;
     }
   }
+
+  /// Register a callback to be called when speech with the given ttsId completes
+  /// The callback will be called with (ttsId, completed) when speech finishes
+  void registerCompletionCallback(String ttsId, TtsCompletionCallback callback) {
+    _completionCallbacks[ttsId] = callback;
+    debugPrint('TTS: Registered completion callback for ttsId: $ttsId');
+  }
+
+  /// Remove a pending completion callback
+  void removeCompletionCallback(String ttsId) {
+    _completionCallbacks.remove(ttsId);
+    debugPrint('TTS: Removed completion callback for ttsId: $ttsId');
+  }
+
+  /// Get the current ttsId being spoken
+  String? get currentTtsId => _currentTtsId;
 
   /// Stop any ongoing speech
   Future<bool> stop() async {

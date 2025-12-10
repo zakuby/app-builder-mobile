@@ -328,6 +328,7 @@ AppBridge.postMessage({
   action: 'TTS_SPEAK',
   data: {
     text: 'Hello, world!',
+    ttsId: 'tts_123',     // optional, unique ID for tracking completion
     language: 'en-US',    // optional, default: 'en-US'
     rate: 0.5,            // optional, 0.0-1.0, default: 0.5
     pitch: 1.0,           // optional, 0.5-2.0, default: 1.0
@@ -335,6 +336,7 @@ AppBridge.postMessage({
   },
   callbackId: 'tts_callback_123'
 });
+// Response: { success: true, data: { ttsId: 'tts_123' } }
 
 // Cancel speech
 AppBridge.postMessage({
@@ -370,6 +372,15 @@ AppBridge.postMessage({
   action: 'TTS_OPEN_SETTINGS',
   callbackId: 'tts_settings_123'
 });
+
+// Wait for speech to complete (async callback)
+// NOTE: This does NOT respond immediately - it waits until speech finishes
+AppBridge.postMessage({
+  action: 'TTS_IS_COMPLETE',
+  data: { ttsId: 'tts_123' },  // ttsId from TTS_SPEAK
+  callbackId: 'tts_complete_123'
+});
+// Response (when speech completes): { success: true, data: { ttsId: 'tts_123', completed: true } }
 ```
 
 **Dart Usage:**
@@ -377,14 +388,22 @@ AppBridge.postMessage({
 // Get TTS service from DI
 final ttsService = getIt<TTSService>();
 
-// Speak text
-await ttsService.speak('Hello, world!');
+// Speak text (with optional ttsId for tracking)
+await ttsService.speak('Hello, world!', ttsId: 'unique_id_123');
 
 // Stop speech
 await ttsService.stop();
 
 // Check if speaking
 bool speaking = ttsService.isSpeaking;
+
+// Get current ttsId being spoken
+String? currentId = ttsService.currentTtsId;
+
+// Register completion callback
+ttsService.registerCompletionCallback('unique_id_123', (ttsId, completed) {
+  print('Speech $ttsId completed: $completed');
+});
 
 // Configure TTS
 await ttsService.setLanguage('es-ES');
