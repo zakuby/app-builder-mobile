@@ -10,7 +10,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
-/// Handles actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL, TTS_GET_LANGUAGES, TTS_IS_LANGUAGE_AVAILABLE, TTS_IS_LANGUAGE_INSTALLED, TTS_OPEN_SETTINGS, TTS_IS_COMPLETE
+/// Handles actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL, TTS_GET_LANGUAGES, TTS_IS_LANGUAGE_AVAILABLE, TTS_IS_LANGUAGE_INSTALLED, TTS_OPEN_SETTINGS
+///
+/// TTS completion is handled automatically by calling the global JavaScript function
+/// `handleTtsCompleted(ttsId)` when speech finishes, rather than requiring polling.
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   final DeviceInfoDataSource _deviceInfoDataSource =
@@ -18,7 +21,37 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final TTSService _ttsService = getIt<TTSService>();
   final VoidCallback? onLogout;
 
-  DefaultWebViewMessageHandler({this.onLogout});
+  DefaultWebViewMessageHandler({this.onLogout}) {
+    // Set up TTS completion callback to notify JavaScript when speech finishes
+    _ttsService.setCompletionCallback(_onTtsCompleted);
+  }
+
+  /// Called when TTS speech completes - notifies JavaScript via handleTtsCompleted
+  void _onTtsCompleted(String? ttsId, bool completed) {
+    if (controller == null) {
+      debugPrint('TTS completion: No WebViewController available');
+      return;
+    }
+
+    if (ttsId == null) {
+      debugPrint('TTS completion: No ttsId to report');
+      return;
+    }
+
+    // Call the global JavaScript function handleTtsCompleted(ttsId)
+    final jsCode = '''
+      (function() {
+        if (typeof window.handleTtsCompleted === "function") {
+          window.handleTtsCompleted("$ttsId");
+        } else {
+          console.warn('handleTtsCompleted function not found');
+        }
+      })();
+    ''';
+
+    controller!.runJavaScript(jsCode);
+    debugPrint('TTS completion: Called handleTtsCompleted("$ttsId")');
+  }
 
   @override
   Future<void> handleMessage(
@@ -73,9 +106,6 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'TTS_OPEN_SETTINGS':
           await _handleTtsOpenSettings(callbackId);
-          break;
-        case 'TTS_IS_COMPLETE':
-          await _handleTtsIsComplete(data, callbackId);
           break;
         default:
           debugPrint('Unknown action: $action');
@@ -498,58 +528,6 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling TTS_OPEN_SETTINGS: $e');
       sendCallback(callbackId, false, 'Error opening settings: $e');
-    }
-  }
-
-  /// Handle TTS_IS_COMPLETE action from web
-  /// Registers a callback that will be triggered when the TTS speech completes
-  /// This does NOT respond immediately - it waits until speech finishes
-  Future<void> _handleTtsIsComplete(
-    Map<String, dynamic> message,
-    String? callbackId,
-  ) async {
-    try {
-      final messageData = message['data'] as Map<String, dynamic>?;
-      if (messageData == null) {
-        sendCallback(callbackId, false, 'No data provided');
-        return;
-      }
-
-      final ttsId = messageData['ttsId'] as String?;
-
-      if (ttsId == null || ttsId.isEmpty) {
-        sendCallback(callbackId, false, 'No ttsId provided');
-        return;
-      }
-
-      debugPrint('TTS_IS_COMPLETE: Registering callback for ttsId: $ttsId, callbackId: $callbackId');
-
-      // Check if this ttsId is currently being spoken
-      final currentTtsId = _ttsService.currentTtsId;
-
-      // If no speech is active or different ttsId is active, the speech might have already completed
-      if (currentTtsId == null || currentTtsId != ttsId) {
-        // Speech already completed or was never started with this ttsId
-        debugPrint('TTS_IS_COMPLETE: ttsId $ttsId is not currently active (current: $currentTtsId)');
-        sendCallback(callbackId, true, 'Speech already completed', {
-          'ttsId': ttsId,
-          'completed': true,
-        });
-        return;
-      }
-
-      // Register callback to be called when speech completes
-      // DO NOT respond yet - wait for completion
-      _ttsService.registerCompletionCallback(ttsId, (completedTtsId, completed) {
-        debugPrint('TTS_IS_COMPLETE: Speech completed for ttsId: $completedTtsId, completed: $completed');
-        sendCallback(callbackId, true, 'Speech completed', {
-          'ttsId': completedTtsId,
-          'completed': completed,
-        });
-      });
-    } catch (e) {
-      debugPrint('Error handling TTS_IS_COMPLETE: $e');
-      sendCallback(callbackId, false, 'Error registering completion callback: $e');
     }
   }
 }

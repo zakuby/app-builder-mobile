@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Callback type for TTS completion notifications
-typedef TtsCompletionCallback = void Function(String ttsId, bool completed);
+/// Called when any TTS speech completes or is cancelled
+/// [ttsId] - The ID of the speech that completed (may be null if no ID was provided)
+/// [completed] - true if speech finished successfully, false if cancelled/errored
+typedef TtsCompletionCallback = void Function(String? ttsId, bool completed);
 
 /// Service for Text-to-Speech functionality
 /// Provides speak and cancel capabilities for WebView integration
@@ -18,9 +21,9 @@ class TTSService {
   /// Currently active ttsId being spoken
   String? _currentTtsId;
 
-  /// Pending completion callbacks waiting for TTS to finish
-  /// Key: ttsId, Value: callback function
-  final Map<String, TtsCompletionCallback> _completionCallbacks = {};
+  /// Global completion callback that gets called whenever any TTS speech completes
+  /// This is used by the WebView message handler to notify JavaScript
+  TtsCompletionCallback? _globalCompletionCallback;
 
   /// Initialize the TTS engine
   Future<void> initialize() async {
@@ -70,14 +73,22 @@ class TTSService {
     }
   }
 
-  /// Notify all pending completion callbacks for the current ttsId
+  /// Notify the global completion callback when speech finishes
   void _notifyCompletion({required bool completed}) {
-    if (_currentTtsId != null && _completionCallbacks.containsKey(_currentTtsId)) {
-      final callback = _completionCallbacks.remove(_currentTtsId);
-      callback?.call(_currentTtsId!, completed);
-      debugPrint('TTS: Notified completion callback for ttsId: $_currentTtsId, completed: $completed');
-    }
+    final ttsId = _currentTtsId;
     _currentTtsId = null;
+
+    if (_globalCompletionCallback != null) {
+      debugPrint('TTS: Notifying global completion callback for ttsId: $ttsId, completed: $completed');
+      _globalCompletionCallback!(ttsId, completed);
+    }
+  }
+
+  /// Set a global completion callback that will be called whenever any TTS speech completes
+  /// This is typically set once by the message handler to notify JavaScript
+  void setCompletionCallback(TtsCompletionCallback? callback) {
+    _globalCompletionCallback = callback;
+    debugPrint('TTS: Global completion callback ${callback != null ? 'set' : 'cleared'}');
   }
 
   /// Speak the given text with optional ttsId for tracking
@@ -110,19 +121,6 @@ class TTSService {
       _currentTtsId = null;
       return false;
     }
-  }
-
-  /// Register a callback to be called when speech with the given ttsId completes
-  /// The callback will be called with (ttsId, completed) when speech finishes
-  void registerCompletionCallback(String ttsId, TtsCompletionCallback callback) {
-    _completionCallbacks[ttsId] = callback;
-    debugPrint('TTS: Registered completion callback for ttsId: $ttsId');
-  }
-
-  /// Remove a pending completion callback
-  void removeCompletionCallback(String ttsId) {
-    _completionCallbacks.remove(ttsId);
-    debugPrint('TTS: Removed completion callback for ttsId: $ttsId');
   }
 
   /// Get the current ttsId being spoken
