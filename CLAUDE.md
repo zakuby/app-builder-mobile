@@ -309,12 +309,16 @@ The app integrates text-to-speech functionality for accessibility and voice feed
 **Key Features:**
 - Speak text with customizable language, rate, pitch, and volume
 - Cancel ongoing speech
+- Get list of installed TTS languages
+- Check if a specific language is available or installed
+- Open device TTS settings for language installation
 - Lazy initialization (TTS engine starts on first use)
 - Singleton pattern for consistent state management
 
 **Architecture:**
 - `TTSService` singleton in `lib/services/tts_service.dart` handles all TTS operations
 - Uses `flutter_tts` (^4.2.0) package
+- Uses `app_settings` (^5.1.1) for opening device settings
 - Registered in GetIt for dependency injection
 
 **WebView JavaScript Bridge:**
@@ -336,6 +340,35 @@ AppBridge.postMessage({
 AppBridge.postMessage({
   action: 'TTS_CANCEL',
   callbackId: 'tts_cancel_123'
+});
+
+// Get installed languages
+AppBridge.postMessage({
+  action: 'TTS_GET_LANGUAGES',
+  callbackId: 'tts_languages_123'
+});
+// Response: { success: true, data: { languages: ['en-US', 'es-ES', ...] } }
+
+// Check if language is available (cross-platform)
+AppBridge.postMessage({
+  action: 'TTS_IS_LANGUAGE_AVAILABLE',
+  data: { language: 'es-ES' },
+  callbackId: 'tts_check_123'
+});
+// Response: { success: true, data: { language: 'es-ES', available: true/false } }
+
+// Check if language is installed (Android only)
+AppBridge.postMessage({
+  action: 'TTS_IS_LANGUAGE_INSTALLED',
+  data: { language: 'ja-JP' },
+  callbackId: 'tts_installed_123'
+});
+// Response: { success: true, data: { language: 'ja-JP', installed: true/false } }
+
+// Open device TTS settings (for installing languages)
+AppBridge.postMessage({
+  action: 'TTS_OPEN_SETTINGS',
+  callbackId: 'tts_settings_123'
 });
 ```
 
@@ -359,8 +392,14 @@ await ttsService.setSpeechRate(0.7);
 await ttsService.setPitch(1.2);
 await ttsService.setVolume(0.8);
 
-// Get available languages
+// Get available languages (only installed on device)
 List<dynamic> languages = await ttsService.getLanguages();
+
+// Check if language is available (cross-platform)
+bool available = await ttsService.isLanguageAvailable('es-ES');
+
+// Check if language is installed (Android only)
+bool installed = await ttsService.isLanguageInstalled('ja-JP');
 ```
 
 ## Key Dependencies
@@ -380,6 +419,7 @@ List<dynamic> languages = await ttsService.getLanguages();
 - `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
 - `flutter_local_notifications: ^18.0.1` - Local notifications display
 - `flutter_tts: ^4.2.0` - Text-to-speech functionality
+- `app_settings: ^5.1.1` - Open device settings (for TTS language installation)
 
 ### Development
 - `build_runner: ^2.4.15` - Code generation runner

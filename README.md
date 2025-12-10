@@ -261,6 +261,15 @@ Default handler supports:
 - `DELETE_SECURE` - Delete data from encrypted storage
 - `LOGOUT` - Clear user data and logout
 - `GET_DEVICE_INFO` - Get device information (model, manufacturer, OS version, platform)
+- `GET_APP_VERSION` - Get app version and build number
+- `GENERATE_FCM_TOKEN` - Get Firebase Cloud Messaging token
+- `SHARE` - Open native share dialog
+- `TTS_SPEAK` - Speak text using text-to-speech
+- `TTS_CANCEL` - Cancel ongoing speech
+- `TTS_GET_LANGUAGES` - Get list of installed TTS languages
+- `TTS_IS_LANGUAGE_AVAILABLE` - Check if a language is available (cross-platform)
+- `TTS_IS_LANGUAGE_INSTALLED` - Check if a language is installed (Android only)
+- `TTS_OPEN_SETTINGS` - Open device settings for TTS language installation
 
 #### Custom Message Handler
 
@@ -344,10 +353,17 @@ window.handleFlutterCallback = function(callbackId, response) {
 - `flutter_secure_storage: ^9.2.2` - Encrypted storage
 - `get_it: ^8.0.2` - Dependency injection / service locator
 - `device_info_plus: ^11.1.1` - Device information
+- `package_info_plus: ^8.1.2` - App version information
 - `freezed_annotation: ^3.1.0` - Code generation annotations
 - `json_annotation: ^4.9.0` - JSON serialization annotations
 - `collection: ^1.19.1` - Collection utilities
 - `cupertino_icons: ^1.0.8` - iOS-style icons
+- `firebase_core: ^3.10.1` - Firebase core SDK
+- `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
+- `flutter_local_notifications: ^18.0.1` - Local notifications
+- `share_plus: ^10.1.4` - Native share dialog
+- `flutter_tts: ^4.2.0` - Text-to-speech
+- `app_settings: ^5.1.1` - Open device settings
 
 ### Development
 - `build_runner: ^2.4.15` - Code generation runner

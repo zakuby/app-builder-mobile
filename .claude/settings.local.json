@@ -20,7 +20,10 @@
       "Bash(cmd.exe /c \"flutter pub run build_runner build --delete-conflicting-outputs\")",
       "Bash(cmd.exe /c \"flutter analyze\")",
       "Bash(cmd.exe /c \"flutter pub get\")",
-      "Bash(cmd.exe /c \"dart analyze lib/services/tts_service.dart lib/presentation/webview/default_web_view_message_handler.dart lib/core/di/injection.dart\")"
+      "Bash(cmd.exe /c \"dart analyze lib/services/tts_service.dart lib/presentation/webview/default_web_view_message_handler.dart lib/core/di/injection.dart\")",
+      "Bash(cmd.exe /c \"dart analyze lib/presentation/webview/default_web_view_message_handler.dart\")",
+      "WebFetch(domain:pub.dev)",
+      "Bash(cmd.exe:*)"
     ],
     "deny": [],
     "ask": []

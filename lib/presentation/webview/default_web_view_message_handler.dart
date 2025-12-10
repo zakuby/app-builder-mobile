@@ -4,12 +4,13 @@ import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
 import 'package:app_builder_mobile/presentation/webview/web_view_message_handler.dart';
 import 'package:app_builder_mobile/services/fcm_service.dart';
 import 'package:app_builder_mobile/services/tts_service.dart';
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
-/// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL
+/// Handles actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL, TTS_GET_LANGUAGES, TTS_IS_LANGUAGE_AVAILABLE, TTS_IS_LANGUAGE_INSTALLED, TTS_OPEN_SETTINGS
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   final DeviceInfoDataSource _deviceInfoDataSource =
@@ -60,6 +61,18 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'TTS_CANCEL':
           await _handleTtsCancel(callbackId);
+          break;
+        case 'TTS_GET_LANGUAGES':
+          await _handleTtsGetLanguages(callbackId);
+          break;
+        case 'TTS_IS_LANGUAGE_AVAILABLE':
+          await _handleTtsIsLanguageAvailable(data, callbackId);
+          break;
+        case 'TTS_IS_LANGUAGE_INSTALLED':
+          await _handleTtsIsLanguageInstalled(data, callbackId);
+          break;
+        case 'TTS_OPEN_SETTINGS':
+          await _handleTtsOpenSettings(callbackId);
           break;
         default:
           debugPrint('Unknown action: $action');
@@ -369,6 +382,116 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling TTS_CANCEL: $e');
       sendCallback(callbackId, false, 'Error cancelling speech: $e');
+    }
+  }
+
+  /// Handle TTS_GET_LANGUAGES action from web
+  /// Returns the list of available TTS languages installed on the device
+  Future<void> _handleTtsGetLanguages(String? callbackId) async {
+    try {
+      final languages = await _ttsService.getLanguages();
+      debugPrint('TTS available languages: $languages');
+
+      // Convert to List<String> for consistent typing
+      final languageList = languages.map((e) => e.toString()).toList();
+
+      sendCallback(
+        callbackId,
+        true,
+        'Languages retrieved successfully',
+        {'languages': languageList},
+      );
+    } catch (e) {
+      debugPrint('Error handling TTS_GET_LANGUAGES: $e');
+      sendCallback(callbackId, false, 'Error retrieving languages: $e');
+    }
+  }
+
+  /// Handle TTS_IS_LANGUAGE_AVAILABLE action from web
+  /// Checks if a language is available for TTS (cross-platform)
+  Future<void> _handleTtsIsLanguageAvailable(
+    Map<String, dynamic> message,
+    String? callbackId,
+  ) async {
+    try {
+      final messageData = message['data'] as Map<String, dynamic>?;
+      if (messageData == null) {
+        sendCallback(callbackId, false, 'No data provided');
+        return;
+      }
+
+      final language = messageData['language'] as String?;
+
+      if (language == null || language.isEmpty) {
+        sendCallback(callbackId, false, 'No language provided');
+        return;
+      }
+
+      final isAvailable = await _ttsService.isLanguageAvailable(language);
+      debugPrint('TTS isLanguageAvailable($language): $isAvailable');
+
+      sendCallback(
+        callbackId,
+        true,
+        isAvailable ? 'Language is available' : 'Language is not available',
+        {'language': language, 'available': isAvailable},
+      );
+    } catch (e) {
+      debugPrint('Error handling TTS_IS_LANGUAGE_AVAILABLE: $e');
+      sendCallback(callbackId, false, 'Error checking language availability: $e');
+    }
+  }
+
+  /// Handle TTS_IS_LANGUAGE_INSTALLED action from web
+  /// Checks if a language is installed on the device (Android only)
+  Future<void> _handleTtsIsLanguageInstalled(
+    Map<String, dynamic> message,
+    String? callbackId,
+  ) async {
+    try {
+      final messageData = message['data'] as Map<String, dynamic>?;
+      if (messageData == null) {
+        sendCallback(callbackId, false, 'No data provided');
+        return;
+      }
+
+      final language = messageData['language'] as String?;
+
+      if (language == null || language.isEmpty) {
+        sendCallback(callbackId, false, 'No language provided');
+        return;
+      }
+
+      final isInstalled = await _ttsService.isLanguageInstalled(language);
+      debugPrint('TTS isLanguageInstalled($language): $isInstalled');
+
+      sendCallback(
+        callbackId,
+        true,
+        isInstalled ? 'Language is installed' : 'Language is not installed',
+        {'language': language, 'installed': isInstalled},
+      );
+    } catch (e) {
+      debugPrint('Error handling TTS_IS_LANGUAGE_INSTALLED: $e');
+      sendCallback(callbackId, false, 'Error checking language installation: $e');
+    }
+  }
+
+  /// Handle TTS_OPEN_SETTINGS action from web
+  /// Opens the device TTS settings so user can install languages
+  Future<void> _handleTtsOpenSettings(String? callbackId) async {
+    try {
+      await AppSettings.openAppSettings(type: AppSettingsType.settings);
+      debugPrint('TTS settings opened');
+
+      sendCallback(
+        callbackId,
+        true,
+        'Settings opened successfully',
+      );
+    } catch (e) {
+      debugPrint('Error handling TTS_OPEN_SETTINGS: $e');
+      sendCallback(callbackId, false, 'Error opening settings: $e');
     }
   }
 }

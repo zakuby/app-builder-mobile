@@ -138,6 +138,39 @@ class TTSService {
     return await _flutterTts!.getLanguages;
   }
 
+  /// Check if a language is available (cross-platform)
+  /// Returns true if the language can be used for TTS
+  Future<bool> isLanguageAvailable(String language) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    try {
+      final result = await _flutterTts!.isLanguageAvailable(language);
+      debugPrint('TTS: isLanguageAvailable($language) = $result');
+      // Result can be 1 (available) or 0 (not available) on some platforms
+      return result == true || result == 1;
+    } catch (e) {
+      debugPrint('TTS isLanguageAvailable error: $e');
+      return false;
+    }
+  }
+
+  /// Check if a language is installed (Android only)
+  /// Returns true if the language is installed on the device
+  Future<bool> isLanguageInstalled(String language) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    try {
+      final result = await _flutterTts!.isLanguageInstalled(language);
+      debugPrint('TTS: isLanguageInstalled($language) = $result');
+      return result == true || result == 1;
+    } catch (e) {
+      debugPrint('TTS isLanguageInstalled error: $e');
+      return false;
+    }
+  }
+
   /// Dispose the TTS engine
   Future<void> dispose() async {
     if (_flutterTts != null) {
