@@ -180,8 +180,9 @@ UI code is organized by feature in `lib/presentation/`:
   - `parseMessage()`: Parse JSON messages
 
 - **`DefaultWebViewMessageHandler`**: Default implementation
-  - Handles SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT actions
+  - Handles SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, TTS_SPEAK, TTS_CANCEL actions
   - Uses `AuthRepository` for secure storage operations
+  - Uses `TTSService` for text-to-speech operations
 
 #### Utilities
 - **`AppColors`** (in `lib/util/app_colors.dart`): Centralized color access from configuration
@@ -222,7 +223,8 @@ lib/
 │       ├── web_view_message_handler.dart
 │       └── default_web_view_message_handler.dart
 ├── services/                    # Services layer
-│   └── fcm_service.dart        # Firebase Cloud Messaging service
+│   ├── fcm_service.dart        # Firebase Cloud Messaging service
+│   └── tts_service.dart        # Text-to-Speech service
 ├── util/                        # Utilities
 │   ├── app_util.dart           # Config parsing and access
 │   └── app_colors.dart         # Centralized color management
@@ -301,6 +303,66 @@ await FCMService().unsubscribeFromTopic('news');
 await FCMService().deleteToken();
 ```
 
+### Text-to-Speech (TTS)
+The app integrates text-to-speech functionality for accessibility and voice feedback features.
+
+**Key Features:**
+- Speak text with customizable language, rate, pitch, and volume
+- Cancel ongoing speech
+- Lazy initialization (TTS engine starts on first use)
+- Singleton pattern for consistent state management
+
+**Architecture:**
+- `TTSService` singleton in `lib/services/tts_service.dart` handles all TTS operations
+- Uses `flutter_tts` (^4.2.0) package
+- Registered in GetIt for dependency injection
+
+**WebView JavaScript Bridge:**
+```javascript
+// Speak text
+AppBridge.postMessage({
+  action: 'TTS_SPEAK',
+  data: {
+    text: 'Hello, world!',
+    language: 'en-US',    // optional, default: 'en-US'
+    rate: 0.5,            // optional, 0.0-1.0, default: 0.5
+    pitch: 1.0,           // optional, 0.5-2.0, default: 1.0
+    volume: 1.0           // optional, 0.0-1.0, default: 1.0
+  },
+  callbackId: 'tts_callback_123'
+});
+
+// Cancel speech
+AppBridge.postMessage({
+  action: 'TTS_CANCEL',
+  callbackId: 'tts_cancel_123'
+});
+```
+
+**Dart Usage:**
+```dart
+// Get TTS service from DI
+final ttsService = getIt<TTSService>();
+
+// Speak text
+await ttsService.speak('Hello, world!');
+
+// Stop speech
+await ttsService.stop();
+
+// Check if speaking
+bool speaking = ttsService.isSpeaking;
+
+// Configure TTS
+await ttsService.setLanguage('es-ES');
+await ttsService.setSpeechRate(0.7);
+await ttsService.setPitch(1.2);
+await ttsService.setVolume(0.8);
+
+// Get available languages
+List<dynamic> languages = await ttsService.getLanguages();
+```
+
 ## Key Dependencies
 
 ### Production
@@ -317,9 +379,7 @@ await FCMService().deleteToken();
 - `firebase_core: ^3.10.1` - Firebase core SDK
 - `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
 - `flutter_local_notifications: ^18.0.1` - Local notifications display
-- `firebase_core: ^3.10.1` - Firebase core SDK
-- `firebase_messaging: ^15.2.0` - Firebase Cloud Messaging
-- `flutter_local_notifications: ^18.0.1` - Local notifications display
+- `flutter_tts: ^4.2.0` - Text-to-speech functionality
 
 ### Development
 - `build_runner: ^2.4.15` - Code generation runner
