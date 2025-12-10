@@ -3,16 +3,18 @@ import 'package:app_builder_mobile/data/datasources/device_info_datasource.dart'
 import 'package:app_builder_mobile/domain/repositories/auth_repository.dart';
 import 'package:app_builder_mobile/presentation/webview/web_view_message_handler.dart';
 import 'package:app_builder_mobile/services/fcm_service.dart';
+import 'package:app_builder_mobile/services/tts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
-/// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN
+/// Handles authentication-related actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   final DeviceInfoDataSource _deviceInfoDataSource =
       getIt<DeviceInfoDataSource>();
+  final TTSService _ttsService = getIt<TTSService>();
   final VoidCallback? onLogout;
 
   DefaultWebViewMessageHandler({this.onLogout});
@@ -52,6 +54,12 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'SHARE':
           await _handleShare(data, callbackId);
+          break;
+        case 'TTS_SPEAK':
+          await _handleTtsSpeak(data, callbackId);
+          break;
+        case 'TTS_CANCEL':
+          await _handleTtsCancel(callbackId);
           break;
         default:
           debugPrint('Unknown action: $action');
@@ -289,6 +297,78 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling SHARE: $e');
       sendCallback(callbackId, false, 'Error sharing: $e');
+    }
+  }
+
+  /// Handle TTS_SPEAK action from web
+  /// Speaks the provided text using text-to-speech
+  Future<void> _handleTtsSpeak(
+    Map<String, dynamic> message,
+    String? callbackId,
+  ) async {
+    try {
+      final messageData = message['data'] as Map<String, dynamic>?;
+      if (messageData == null) {
+        sendCallback(callbackId, false, 'No data provided');
+        return;
+      }
+
+      final text = messageData['text'] as String?;
+
+      if (text == null || text.isEmpty) {
+        sendCallback(callbackId, false, 'No text provided');
+        return;
+      }
+
+      // Optional: language, rate, pitch, volume
+      final language = messageData['language'] as String?;
+      final rate = messageData['rate'] as num?;
+      final pitch = messageData['pitch'] as num?;
+      final volume = messageData['volume'] as num?;
+
+      // Apply optional settings
+      if (language != null) {
+        await _ttsService.setLanguage(language);
+      }
+      if (rate != null) {
+        await _ttsService.setSpeechRate(rate.toDouble());
+      }
+      if (pitch != null) {
+        await _ttsService.setPitch(pitch.toDouble());
+      }
+      if (volume != null) {
+        await _ttsService.setVolume(volume.toDouble());
+      }
+
+      final success = await _ttsService.speak(text);
+      debugPrint('TTS speak result: $success for text: "$text"');
+
+      if (success) {
+        sendCallback(callbackId, true, 'Speech started successfully');
+      } else {
+        sendCallback(callbackId, false, 'Failed to start speech');
+      }
+    } catch (e) {
+      debugPrint('Error handling TTS_SPEAK: $e');
+      sendCallback(callbackId, false, 'Error speaking: $e');
+    }
+  }
+
+  /// Handle TTS_CANCEL action from web
+  /// Stops any ongoing text-to-speech
+  Future<void> _handleTtsCancel(String? callbackId) async {
+    try {
+      final success = await _ttsService.stop();
+      debugPrint('TTS cancel result: $success');
+
+      if (success) {
+        sendCallback(callbackId, true, 'Speech cancelled successfully');
+      } else {
+        sendCallback(callbackId, false, 'Failed to cancel speech');
+      }
+    } catch (e) {
+      debugPrint('Error handling TTS_CANCEL: $e');
+      sendCallback(callbackId, false, 'Error cancelling speech: $e');
     }
   }
 }
