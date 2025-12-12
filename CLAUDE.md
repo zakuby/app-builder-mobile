@@ -372,18 +372,22 @@ AppBridge.postMessage({
   action: 'TTS_OPEN_SETTINGS',
   callbackId: 'tts_settings_123'
 });
+
+// Wait for TTS completion (SDK v1.0.9+)
+AppBridge.postMessage({
+  action: 'TTS_AWAIT_COMPLETION',
+  data: { ttsId: 'tts_123' },
+  callbackId: 'tts_await_123'
+});
+// Response (when speech completes): { success: true, data: { ttsId: 'tts_123', completed: true } }
+// Response (if cancelled): { success: true, data: { ttsId: 'tts_123', completed: false } }
 ```
 
 **TTS Completion Handling:**
-When TTS speech completes, the mobile app automatically calls a global JavaScript function:
-```javascript
-// Define this function to receive TTS completion notifications
-window.handleTtsCompleted = function(ttsId) {
-  console.log('Speech completed for ttsId:', ttsId);
-  // Handle completion - e.g., start next speech, update UI, etc.
-};
-```
-This push-based approach replaces the old polling-based `TTS_IS_COMPLETE` action.
+The SDK uses a callback-based approach for TTS completion. After calling `TTS_SPEAK`, the SDK sends `TTS_AWAIT_COMPLETION` with the same ttsId. The callback is resolved when:
+- Speech completes naturally (`completed: true`)
+- Speech is cancelled via `TTS_CANCEL` (`completed: false`)
+- An error occurs (`completed: false`)
 
 **Dart Usage:**
 ```dart

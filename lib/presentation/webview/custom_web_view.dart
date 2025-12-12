@@ -43,6 +43,7 @@ class CustomWebView extends StatefulWidget {
 class CustomWebViewState extends State<CustomWebView> {
   late final WebViewController _controller;
   bool _isLoading = true;
+  bool _isSilentReload = false;
 
   /// Expose controller for external navigation control
   WebViewController get controller => _controller;
@@ -61,6 +62,15 @@ class CustomWebViewState extends State<CustomWebView> {
     }
   }
 
+  /// Reload the current WebView page
+  /// If [silent] is true, the loading indicator won't show during reload
+  Future<void> reload({bool silent = false}) async {
+    if (silent) {
+      _isSilentReload = true;
+    }
+    await _controller.reload();
+  }
+
   /// Initialize WebView with JavaScript channel
   void _initializeWebView() {
     _controller = WebViewController()
@@ -75,7 +85,7 @@ class CustomWebViewState extends State<CustomWebView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            if (mounted) {
+            if (mounted && !_isSilentReload) {
               setState(() {
                 _isLoading = true;
               });
@@ -85,6 +95,7 @@ class CustomWebViewState extends State<CustomWebView> {
             if (mounted) {
               setState(() {
                 _isLoading = false;
+                _isSilentReload = false;
               });
             }
 

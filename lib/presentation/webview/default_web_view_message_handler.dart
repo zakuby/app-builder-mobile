@@ -10,10 +10,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Default implementation of WebViewMessageHandler
-/// Handles actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL, TTS_GET_LANGUAGES, TTS_IS_LANGUAGE_AVAILABLE, TTS_IS_LANGUAGE_INSTALLED, TTS_OPEN_SETTINGS
+/// Handles actions: SAVE_SECURE, GET_SECURE, DELETE_SECURE, LOGOUT, GET_DEVICE_INFO, GET_APP_VERSION, GENERATE_FCM_TOKEN, TTS_SPEAK, TTS_CANCEL, TTS_AWAIT_COMPLETION, TTS_GET_LANGUAGES, TTS_IS_LANGUAGE_AVAILABLE, TTS_IS_LANGUAGE_INSTALLED, TTS_OPEN_SETTINGS
 ///
-/// TTS completion is handled automatically by calling the global JavaScript function
-/// `handleTtsCompleted(ttsId)` when speech finishes, rather than requiring polling.
+/// TTS completion is handled via callbacks:
+/// - TTS_AWAIT_COMPLETION: SDK sends this to wait for a specific ttsId to complete
+/// - When TTS finishes, the stored callback is resolved with the completion status
 class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final AuthRepository _authRepository = getIt<AuthRepository>();
   final DeviceInfoDataSource _deviceInfoDataSource =
@@ -21,12 +22,17 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   final TTSService _ttsService = getIt<TTSService>();
   final VoidCallback? onLogout;
 
+  /// Pending TTS completion callbacks: ttsId -> callbackId
+  /// When TTS_AWAIT_COMPLETION is received, the callback is stored here
+  /// and resolved when the corresponding ttsId completes
+  final Map<String, String> _pendingTtsCallbacks = {};
+
   DefaultWebViewMessageHandler({this.onLogout}) {
     // Set up TTS completion callback to notify JavaScript when speech finishes
     _ttsService.setCompletionCallback(_onTtsCompleted);
   }
 
-  /// Called when TTS speech completes - notifies JavaScript via handleTtsCompleted
+  /// Called when TTS speech completes - resolves any pending callbacks
   void _onTtsCompleted(String? ttsId, bool completed) {
     if (controller == null) {
       debugPrint('TTS completion: No WebViewController available');
@@ -38,19 +44,17 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
       return;
     }
 
-    // Call the global JavaScript function handleTtsCompleted(ttsId)
-    final jsCode = '''
-      (function() {
-        if (typeof window.handleTtsCompleted === "function") {
-          window.handleTtsCompleted("$ttsId");
-        } else {
-          console.warn('handleTtsCompleted function not found');
-        }
-      })();
-    ''';
-
-    controller!.runJavaScript(jsCode);
-    debugPrint('TTS completion: Called handleTtsCompleted("$ttsId")');
+    // Check if there's a pending callback for this ttsId
+    final callbackId = _pendingTtsCallbacks.remove(ttsId);
+    if (callbackId != null) {
+      debugPrint('TTS completion: Resolving callback for ttsId: $ttsId, completed: $completed');
+      sendCallback(callbackId, true, completed ? 'Speech completed' : 'Speech cancelled', {
+        'ttsId': ttsId,
+        'completed': completed,
+      });
+    } else {
+      debugPrint('TTS completion: No pending callback for ttsId: $ttsId');
+    }
   }
 
   @override
@@ -94,6 +98,9 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
           break;
         case 'TTS_CANCEL':
           await _handleTtsCancel(callbackId);
+          break;
+        case 'TTS_AWAIT_COMPLETION':
+          _handleTtsAwaitCompletion(data, callbackId);
           break;
         case 'TTS_GET_LANGUAGES':
           await _handleTtsGetLanguages(callbackId);
@@ -404,9 +411,13 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
   }
 
   /// Handle TTS_CANCEL action from web
-  /// Stops any ongoing text-to-speech
+  /// Stops any ongoing text-to-speech and clears pending callbacks
   Future<void> _handleTtsCancel(String? callbackId) async {
     try {
+      // Clear all pending callbacks since we're cancelling
+      _pendingTtsCallbacks.clear();
+      debugPrint('TTS cancel: Cleared pending callbacks');
+
       final success = await _ttsService.stop();
       debugPrint('TTS cancel result: $success');
 
@@ -418,6 +429,42 @@ class DefaultWebViewMessageHandler extends WebViewMessageHandler {
     } catch (e) {
       debugPrint('Error handling TTS_CANCEL: $e');
       sendCallback(callbackId, false, 'Error cancelling speech: $e');
+    }
+  }
+
+  /// Handle TTS_AWAIT_COMPLETION action from web
+  /// Stores the callback to be resolved when the specified ttsId completes
+  void _handleTtsAwaitCompletion(
+    Map<String, dynamic> message,
+    String? callbackId,
+  ) {
+    try {
+      final messageData = message['data'] as Map<String, dynamic>?;
+      if (messageData == null) {
+        sendCallback(callbackId, false, 'No data provided');
+        return;
+      }
+
+      final ttsId = messageData['ttsId'] as String?;
+
+      if (ttsId == null || ttsId.isEmpty) {
+        sendCallback(callbackId, false, 'No ttsId provided');
+        return;
+      }
+
+      if (callbackId == null) {
+        debugPrint('TTS await completion: No callbackId provided');
+        return;
+      }
+
+      // Store the callback to be resolved when this ttsId completes
+      _pendingTtsCallbacks[ttsId] = callbackId;
+      debugPrint('TTS await completion: Stored callback for ttsId: $ttsId, callbackId: $callbackId');
+
+      // Don't send callback yet - it will be sent when TTS completes via _onTtsCompleted
+    } catch (e) {
+      debugPrint('Error handling TTS_AWAIT_COMPLETION: $e');
+      sendCallback(callbackId, false, 'Error: $e');
     }
   }
 

@@ -196,6 +196,8 @@ class _HomePageState extends State<HomePage> {
                     currentIndex: currentTabIndex,
                     onTap: (index) {
                       context.read<HomeCubit>().changeIndex(index);
+                      // Reload the WebView silently when switching tabs
+                      _webViewKeys[index].currentState?.reload(silent: true);
                     },
                     type: BottomNavigationBarType.fixed,
                     items: _pagesIcon
